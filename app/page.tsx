@@ -1,65 +1,650 @@
-import Image from "next/image";
+"use client";
+
+import { useEffect, useState } from "react";
+import { supabase } from "@/lib/supabase";
+import { useRouter } from "next/navigation";
+import { usePlant } from "./context/PlantContext";
+
+type Plant = {
+  id: string;
+  name: string;
+  images: string[];
+  category: string;
+  flower_type: string;
+  flower_duration: string;
+  flower_color: string;
+  hedge: string;
+  height_ft: string;
+  width_ft: string;
+  shape: string;
+  variety: string;
+  shade: string;
+  water: string;
+  uses: string;
+};
 
 export default function Home() {
+  const router = useRouter();
+  const [plants, setPlants] = useState<Plant[]>([]);
+  const { setPlantCount } = usePlant();
+  const [search, setSearch] = useState("");
+  const [flowerFilter, setFlowerFilter] = useState("");
+  const [shadeFilter, setShadeFilter] = useState("");
+  const [categoryFilter, setCategoryFilter] = useState("");
+  const [hedgeFilter, setHedgeFilter] = useState("");
+  const [shapeFilter, setShapeFilter] = useState("");
+  const [varietyFilter, setVarietyFilter] = useState("");
+  const [page, setPage] = useState(1);
+  const limit = 6;
+
+  const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
+  const [mediaOpen, setMediaOpen] = useState(false);
+  const [mediaList, setMediaList] = useState<string[]>([]);
+  const [mediaIndex, setMediaIndex] = useState(0);
+const [deletePlantData, setDeletePlantData] = useState<Plant | null>(null);
+  const fetchPlants = async () => {
+    const { data } = await supabase
+      .from("plants")
+      .select("*")
+      .order("created_at", { ascending: false });
+    if (data) setPlants(data);
+  };
+
+  useEffect(() => {
+    const loadPlants = async () => {
+      await fetchPlants();
+    };
+
+    loadPlants();
+  }, []);
+  useEffect(() => {
+  setPlantCount(plants.length);
+}, [plants]);
+
+  const deletePlant = async (plant: Plant) => {
+    
+
+    try {
+      if (plant.images?.length) {
+        const url = plant.images[0];
+        let publicId = url.split("/upload/")[1];
+        publicId = publicId.replace(/^v\d+\//, "");
+        publicId = decodeURIComponent(publicId);
+      const parts = publicId.split("/");
+parts.pop();
+const folderPath = parts.join("/");
+
+        await fetch("/api/delete-image", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ folderPath }),
+        });
+      }
+
+      await supabase.from("plants").delete().eq("id", plant.id);
+      fetchPlants();
+    } catch (e) {
+      console.log(e);
+      alert("❌ Delete failed");
+    }
+  };
+
+  const filtered = plants.filter((p) => {
+    return (
+      p.name.toLowerCase().includes(search.toLowerCase()) &&
+      (flowerFilter ? p.flower_type === flowerFilter : true) &&
+      (shadeFilter ? p.shade === shadeFilter : true) &&
+      (categoryFilter ? p.category === categoryFilter : true) &&
+      (hedgeFilter ? p.hedge === hedgeFilter : true) &&
+      (shapeFilter ? p.shape === shapeFilter : true) &&
+      (varietyFilter ? p.variety === varietyFilter : true)
+    );
+  });
+
+  const current = selectedIndex !== null ? filtered[selectedIndex] : null;
+  const totalPages = Math.ceil(filtered.length / limit);
+  const paginatedData = filtered.slice((page - 1) * limit, page * limit);
+
+  const next = () => {
+    if (selectedIndex === null) return;
+    setSelectedIndex(selectedIndex === filtered.length - 1 ? 0 : selectedIndex + 1);
+  };
+
+  const prev = () => {
+    if (selectedIndex === null) return;
+    setSelectedIndex(selectedIndex === 0 ? filtered.length - 1 : selectedIndex - 1);
+  };
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
+    <div className="p-4 max-w-6xl mx-auto bg-gray-50 min-h-screen">
+      {/* NAVBAR */}
+ 
+
+      {/* SEARCH */}
+      <input
+        value={search}
+        onChange={(e) => setSearch(e.target.value)}
+        placeholder="Search plant..."
+        className="w-full px-4 py-2 border rounded-lg bg-white text-green-700"
+      />
+      <br/>
+       <br/>
+
+      {/* FILTERS */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 mb-6">
+        <select
+          value={categoryFilter}
+          onChange={(e) => setCategoryFilter(e.target.value)}
+          className="w-full min-w-0 px-3 py-2 border border-gray-300 rounded-lg 
+                  bg-white text-green-700 text-sm
+                    focus:outline-none focus:ring-2 focus:ring-green-500">
+          <option value="">Select Category</option>
+          <option>Big tree ( મોટા ઝાડ )</option>
+          <option>Small tree ( નાના ઝાડ )</option>
+          <option>Palm tree ( પામ )</option>
+          <option>Flowering plant ( ફુલ વાળા છોડ )</option>
+          <option>Non flowering plants ( છોડવાઓ )</option>
+          <option>Semi shade plant ( છાયા વાળા છોડ )</option>
+          <option>Shape / cutting plant ( આકાર વાળા છોડ )</option>
+          <option>Dwarf plants ( ડ્રાફ્ટ છોડ )</option>
+          <option>Underground plant ( ગાંઠો )</option>
+          <option>Ground cover plant ( પથરાતા છોડ )</option>
+          <option>lawn ( લોન )</option>
+          <option>Creeper ( વેલ )</option>
+          <option>Ornamental plants</option>
+          <option>Indoor plant</option>
+          <option>Seasonal plant</option>
+          <option>Medicinal plant ( આર્યુવેદિક વનસ્પતિ )</option>
+          <option>Fruit plant ( ફળ ના ઝાડ )</option>
+        </select>
+
+        <select
+          value={shadeFilter}
+          onChange={(e) => setShadeFilter(e.target.value)}
+          className="w-full px-4 py-2 border border-gray-300 rounded-lg 
+             bg-white text-green-700 
+             focus:outline-none focus:ring-2 focus:ring-green-500"
+        >
+          <option value="">Select Shade</option>
+          <option value="Full - Sun">Full - Sun</option>
+          <option value="Semi-Shade">Semi-Shade</option>
+          <option value="Indoor">Indoor</option>
+        </select>
+
+        <select
+          value={flowerFilter}
+          onChange={(e) => setFlowerFilter(e.target.value)}
+          className="w-full px-4 py-2 border border-gray-300 rounded-lg 
+             bg-white text-green-700 
+             focus:outline-none focus:ring-2 focus:ring-green-500"
+        >
+          <option value="">Select Flowering Type</option>
+          <option value="Flowering">Flowering</option>
+          <option value="Non-Flowering">Non-Flowering</option>
+        </select>
+
+        <select
+          value={hedgeFilter}
+          onChange={(e) => setHedgeFilter(e.target.value)}
+          className="w-full px-4 py-2 border border-gray-300 rounded-lg 
+             bg-white text-green-700 
+             focus:outline-none focus:ring-2 focus:ring-green-500"
+        >
+          <option value="">Select Hedge</option>
+          <option>Hedge</option>
+          <option>Non-Hedge</option>
+        </select>
+
+        <select
+          value={shapeFilter}
+          onChange={(e) => setShapeFilter(e.target.value)}
+          className="w-full px-4 py-2 border border-gray-300 rounded-lg 
+             bg-white text-green-700 
+             focus:outline-none focus:ring-2 focus:ring-green-500"
+        >
+          <option value="">Select Shape</option>
+          <option>Multi-Shape</option>
+          <option>Single</option>
+        </select>
+
+        <select
+          value={varietyFilter}
+          onChange={(e) => setVarietyFilter(e.target.value)}
+          className="w-full px-4 py-2 border border-gray-300 rounded-lg 
+             bg-white text-green-700 
+             focus:outline-none focus:ring-2 focus:ring-green-500"
+        >
+          <option value="">Select Variety</option>
+          <option>Simple</option>
+          <option>Varigated</option>
+          <option>Dwarf</option>
+        </select>
+      </div>
+
+      {/* SHOWING COUNT */}
+   {filtered.length === 0 ? (
+  <p className="text-center text-gray-500 mt-10 text-lg">
+    {plants.length === 0
+      ? "🌿 No plants added yet"
+      : "❌ No plants match your filters"}
+  </p>
+) : (
+  <p className="text-sm text-gray-500 mb-4">
+    SHOWING {paginatedData.length} OF {filtered.length} PLANTS
+  </p>
+)}
+      {/* CARDS - NEW DESIGN */}
+      <div className="grid md:grid-cols-2 gap-6">
+        {paginatedData.map((p, index) => {
+         
+
+          const isFlowering = p.flower_type === "Flowering";
+
+          return (
+            <div
+              key={p.id}
+              className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden cursor-pointer hover:shadow-md transition"
+              onClick={() => setSelectedIndex(index)}
             >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+              {/* Top colored bar */}
+              <div
+                className={`h-1 ${
+                  isFlowering ? "bg-green-500" : "bg-blue-500"
+                }`}
+              />
+
+              <div className="p-5">
+                {/* Header with name and badge */}
+                <div className="flex justify-between items-start mb-1">
+                  <div>
+                    <h2 className="text-xl font-bold text-gray-800">{p.name}</h2>
+                    <p className="text-sm text-green-600">{p.category}</p>
+                  </div>
+                  <span
+                    className={`px-3 py-1 rounded-full text-xs font-medium ${
+                      isFlowering
+                        ? "bg-green-100 text-green-700"
+                        : "bg-blue-100 text-blue-700"
+                    }`}
+                  >
+                    {p.flower_type}
+                  </span>
+                </div>
+
+                {/* Media Icons Row */}
+                {/* MEDIA PREVIEW */}
+<div className="flex flex-wrap gap-3 my-4">
+  {(p.images || []).map((file, i) => {
+    const isVideo = file.match(/\.(mp4|webm|mov|avi)$/i);
+
+    return (
+      <div
+        key={i}
+        className="w-20 h-20 rounded-xl overflow-hidden cursor-pointer"
+        onClick={(e) => {
+          e.stopPropagation();
+          setMediaList(p.images);
+          setMediaIndex(i);
+          setMediaOpen(true);
+        }}
+      >
+        {isVideo ? (
+          <video
+            src={file}
+            className="w-full h-full object-cover"
+            muted
+          />
+        ) : (
+          <img
+            src={file}
+            className="w-full h-full object-cover"
+          />
+        )}
+      </div>
+    );
+  })}
+</div>
+                {/* Attributes Grid */}
+                <div className="grid grid-cols-2 gap-x-8 gap-y-3 text-sm font-extrabold text-gray-900">
+                  <div>
+                    <p className="text-gray-400 text-xs uppercase tracking-wide">Type</p>
+                    <p className="font-medium text-gray-800">{p.flower_type}</p>
+                  </div>
+                  <div>
+                    <p className="text-gray-400 text-xs uppercase tracking-wide">Height</p>
+                    <p className="font-medium text-gray-800">{p.height_ft} ft</p>
+                  </div>
+
+                  <div>
+                    <p className="text-gray-400 text-xs uppercase tracking-wide">Color</p>
+                    <p className="font-medium text-gray-800">{p.flower_color || "—"}</p>
+                  </div>
+                  <div>
+                    <p className="text-gray-400 text-xs uppercase tracking-wide">Width</p>
+                    <p className="font-medium text-gray-800">{p.width_ft} ft</p>
+                  </div>
+
+                  <div>
+                    <p className="text-gray-400 text-xs uppercase tracking-wide">Season</p>
+                    <p className="font-medium text-gray-800">{p.flower_duration || "All Season"}</p>
+                  </div>
+                  <div>
+                    <p className="text-gray-400 text-xs uppercase tracking-wide">Shape</p>
+                    <p className="font-medium text-gray-800">{p.shape}</p>
+                  </div>
+
+                  <div>
+                    <p className="text-gray-400 text-xs uppercase tracking-wide">Shade</p>
+                    <p className="font-medium text-gray-800">{p.shade}</p>
+                  </div>
+                  <div>
+                    <p className="text-gray-400 text-xs uppercase tracking-wide">Hedge</p>
+                    <p className="font-medium text-gray-800">{p.hedge}</p>
+                  </div>
+
+                  <div>
+                    <p className="text-gray-400 text-xs uppercase tracking-wide">Variety</p>
+                    <p className="font-medium text-gray-800">{p.variety}</p>
+                  </div>
+                  <div>
+                    <p className="text-gray-400 text-xs uppercase tracking-wide">Water</p>
+                    <p className="font-medium text-gray-800">{p.water}</p>
+                  </div>
+                    <div className="bg-green-50 p-4 rounded-xl mt-4">
+                <p className="text-gray-400 text-xs uppercase mb-1">Uses</p>
+                <p className="text-gray-800">{p.uses}</p>
+              </div>
+                </div>
+
+                {/* Actions */}
+                <div className="flex gap-4 mt-4 pt-4 border-t border-gray-100">
+                  <button
+                    className="text-sm text-green-700 hover:underline"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      router.push(`/edit/${p.id}`);
+                    }}
+                  >
+                    Edit
+                  </button>
+                  <button
+                    className="text-sm text-red-600 hover:underline"
+                   onClick={(e) => {
+                        e.stopPropagation();
+                        setDeletePlantData(p);
+}}
+                  >
+                    Delete
+                  </button>
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* PAGINATION */}
+      <div className="flex justify-center items-center gap-4 mt-8">
+        <button
+          disabled={page === 1}
+          onClick={() => setPage((p) => p - 1)}
+          className="px-4 py-2 rounded-lg border border-gray-200 bg-white disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+        >
+          Prev
+        </button>
+        <span className="text-sm text-gray-600">
+          {page} / {totalPages}
+        </span>
+        <button
+          disabled={page === totalPages || totalPages === 0}
+          onClick={() => setPage((p) => p + 1)}
+          className="px-4 py-2 rounded-lg border border-gray-200 bg-white disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+        >
+          Next
+        </button>
+      </div>
+
+      {/* FULLSCREEN CARD MODAL */}
+      {current && (
+        <div className="fixed inset-0 bg-black/90 z-50 flex items-center justify-center p-4 font-extrabold" >
+          <button
+            onClick={prev}
+            className="absolute left-4 text-white text-4xl hover:scale-110 transition"
           >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
+            ‹
+          </button>
+
+          <div className="bg-white w-full max-w-4xl rounded-2xl overflow-auto max-h-[90vh]">
+            <div className="p-6">
+              <button
+                onClick={() => setSelectedIndex(null)}
+                className="float-right text-2xl text-gray-400 hover:text-gray-600"
+              >
+                ✕
+              </button>
+
+              <h2 className="text-3xl font-bold text-gray-800">{current.name}</h2>
+              <p className="text-green-600 mb-4">{current.category}</p>
+
+              {/* Media Gallery */}
+              <div className="flex gap-3 flex-wrap mb-6">
+                {current.images.map((img, i) =>
+                  img.match(/\.(mp4|webm|mov|avi)$/i) ? (
+                    <video
+                      key={i}
+                      src={img}
+                      className="w-24 h-24 rounded-xl object-cover cursor-pointer hover:opacity-80"
+                      onClick={() => {
+                        setMediaList(current.images);
+                        setMediaIndex(i);
+                        setMediaOpen(true);
+                      }}
+                    />
+                  ) : (
+                    <img
+                      key={i}
+                      src={img}
+                      className="w-24 h-24 rounded-xl object-cover cursor-pointer hover:opacity-80"
+                      onClick={() => {
+                        setMediaList(current.images);
+                        setMediaIndex(i);
+                        setMediaOpen(true);
+                      }}
+                    />
+                  )
+                )}
+              </div>
+
+              {/* Details Grid */}
+              <div className="grid grid-cols-2 gap-4 text-base">
+                <div className="bg-gray-50 p-3 rounded-xl">
+                  <p className="text-gray-400 text-xs uppercase">Type</p>
+                  <p className="font-medium">{current.flower_type}</p>
+                </div>
+                <div className="bg-gray-50 p-3 rounded-xl">
+                  <p className="text-gray-400 text-xs uppercase">Height</p>
+                  <p className="font-medium">{current.height_ft} ft</p>
+                </div>
+                <div className="bg-gray-50 p-3 rounded-xl">
+                  <p className="text-gray-400 text-xs uppercase">Color</p>
+                  <p className="font-medium">{current.flower_color || "—"}</p>
+                </div>
+                <div className="bg-gray-50 p-3 rounded-xl">
+                  <p className="text-gray-400 text-xs uppercase">Width</p>
+                  <p className="font-medium">{current.width_ft} ft</p>
+                </div>
+                <div className="bg-gray-50 p-3 rounded-xl">
+                  <p className="text-gray-400 text-xs uppercase">Season</p>
+                  <p className="font-medium">{current.flower_duration}</p>
+                </div>
+                <div className="bg-gray-50 p-3 rounded-xl">
+                  <p className="text-gray-400 text-xs uppercase">Shape</p>
+                  <p className="font-medium">{current.shape}</p>
+                </div>
+                <div className="bg-gray-50 p-3 rounded-xl">
+                  <p className="text-gray-400 text-xs uppercase">Shade</p>
+                  <p className="font-medium">{current.shade}</p>
+                </div>
+                <div className="bg-gray-50 p-3 rounded-xl">
+                  <p className="text-gray-400 text-xs uppercase">Hedge</p>
+                  <p className="font-medium">{current.hedge}</p>
+                </div>
+                <div className="bg-gray-50 p-3 rounded-xl">
+                  <p className="text-gray-400 text-xs uppercase">Variety</p>
+                  <p className="font-medium">{current.variety}</p>
+                </div>
+                <div className="bg-gray-50 p-3 rounded-xl">
+                  <p className="text-gray-400 text-xs uppercase">Water</p>
+                  <p className="font-medium">{current.water}</p>
+                </div>
+              </div>
+
+              {/* Uses */}
+              <div className="bg-green-50 p-4 rounded-xl mt-4">
+                <p className="text-gray-400 text-xs uppercase mb-1">Uses</p>
+                <p className="text-gray-800">{current.uses}</p>
+              </div>
+            </div>
+          </div>
+
+          <button
+            onClick={next}
+            className="absolute right-4 text-white text-4xl hover:scale-110 transition"
+          >
+            ›
+          </button>
+        </div>
+      )}
+
+      {/* MEDIA FULLSCREEN VIEWER */}
+      {mediaOpen && (
+        <div className="fixed inset-0 bg-black z-[60] flex items-center justify-center">
+          <button
+            onClick={() => setMediaOpen(false)}
+            className="absolute top-5 right-5 text-white text-3xl hover:scale-110 transition"
+          >
+            ✕
+          </button>
+
+          <button
+            onClick={() =>
+              setMediaIndex((prev) =>
+                prev === 0 ? mediaList.length - 1 : prev - 1
+              )
+            }
+            className="absolute left-5 text-white text-5xl hover:scale-110 transition"
+          >
+            ‹
+          </button>
+
+          {mediaList[mediaIndex]?.match(/\.(mp4|webm|mov|avi)$/i) ? (
+            <video
+              src={mediaList[mediaIndex]}
+              controls
+              autoPlay
+              className="max-w-full max-h-full"
             />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+          ) : (
+            <img
+              src={mediaList[mediaIndex]}
+              className="max-w-full max-h-full object-contain"
+            />
+          )}
+
+          <button
+            onClick={() =>
+              setMediaIndex((prev) =>
+                prev === mediaList.length - 1 ? 0 : prev + 1
+              )
+            }
+            className="absolute right-5 text-white text-5xl hover:scale-110 transition"
           >
-            Documentation
-          </a>
+            ›
+          </button>
         </div>
-      </main>
+      )}
+      {deletePlantData && (
+  <div className="confirmOverlay">
+    <div className="confirmBox">
+      <h3>Confirmation</h3>
+      <p>Are you sure you want to delete this plant?</p>
+
+      <div className="actions">
+        <button
+          className="cancel"
+          onClick={() => setDeletePlantData(null)}
+        >
+          Cancel
+        </button>
+
+        <button
+          className="delete"
+          onClick={async () => {
+            await deletePlant(deletePlantData);
+            setDeletePlantData(null);
+          }}
+        >
+          Delete
+        </button>
+      </div>
+    </div>
+    <style jsx>{`
+    .confirmOverlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 999;
+}
+
+.confirmBox {
+  background: white;
+  border-radius: 16px;
+  width: 280px;
+  text-align: center;
+  overflow: hidden;
+}
+
+.confirmBox h3 {
+  margin: 16px 0 8px;
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.confirmBox p {
+  font-size: 14px;
+  padding: 0 16px 16px;
+  color: #444;
+}
+
+.actions {
+  display: flex;
+  border-top: 1px solid #eee;
+}
+
+.actions button {
+  flex: 1;
+  padding: 12px;
+  font-size: 16px;
+  border: none;
+  background: none;
+  cursor: pointer;
+}
+
+.cancel {
+  color: #007aff;
+  border-right: 1px solid #eee;
+}
+
+.delete {
+  color: #ff3b30;
+  font-weight: 600;
+}
+    `}</style>
+  </div>
+)}
     </div>
   );
 }
