@@ -1,37 +1,79 @@
 export const uploadImages = async (files: File[], plantName: string) => {
+  const MAX_IMAGE_SIZE = 10 * 1024 * 1024; // 10MB
+
   const uploadFile = async (file: File) => {
+    const isVideo = file.type.startsWith("video");
+    const isImage = file.type.startsWith("image");
+
+    // ✅ Image size check (only addition)
+    if (isImage && file.size > MAX_IMAGE_SIZE) {
+      throw new Error(`${file.name} exceeds 10MB limit`);
+    }
+
     const formData = new FormData();
     formData.append("file", file);
     formData.append("upload_preset", "ml_default");
-
-    // folder per plant
     formData.append("folder", `plants/${plantName}`);
 
-    // ✅ detect type
-    const isVideo = file.type.startsWith("video");
+    try {
+        const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 50000);
 
-    const res = await fetch(
-      `https://api.cloudinary.com/v1_1/${process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME}/${isVideo ? "video" : "image"}/upload`,
-      {
-        method: "POST",
-        body: formData,
+      const res = await fetch(
+       `https://api.cloudinary.com/v1_1/${process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME}/${isVideo ? "video" : "image"}/upload` ,
+        {
+          method: "POST",
+          body: formData,
+           signal: controller.signal,
+        }
+        
+      );
+  clearTimeout(timeout);
+  
+
+
+      // ✅ better error visibility
+      if (!res.ok) {
+        const errText = await res.text().catch(() => "");
+        throw new Error(`Upload failed for ${file.name}: ${errText}`);
       }
-    );
+const data = await res.json(); 
 
-    if (!res.ok) {
-      throw new Error(`Cloudinary upload failed for ${file.name}`);
+// ✅ NOW it's valid
+console.log("Uploaded URL:", data.secure_url);
+
+      if (!data.secure_url) {
+        throw new Error(`No URL returned for ${file.name}`);
+      }
+
+      return data.secure_url as string;
+    } catch (err: any) {
+      // ✅ catch network errors like "Failed to fetch"
+      throw new Error(`Error uploading ${file.name}: ${err?.message || err}`);
     }
-
-    const data = await res.json();
-
-    if (!data.secure_url) {
-      throw new Error(`Cloudinary did not return a URL for ${file.name}`);
-    }
-
-    return data.secure_url as string;
+    
   };
 
-  return Promise.all(files.map(uploadFile));
+
+// ✅ retry wrapper added - new
+const uploadWithRetry = async (file: File, retries = 2): Promise<string> => {
+  try {
+    return await uploadFile(file);
+  } catch (err) {
+    if (retries === 0) throw err;
+    return uploadWithRetry(file, retries - 1);
+  }
+};
+
+  const results: string[] = [];
+
+  for (const file of files) {
+    const url = await uploadFile(file);
+    results.push(url);
+  }
+  
+
+  return results;
 };
 
 
@@ -76,6 +118,7 @@ await fetch("/api/delete-image", {
 };
 
 export const uploadPheImages = async (files: File[], name: string) => {
+  
   const uploadFile = async (file: File) => {
     const formData = new FormData();
     formData.append("file", file);

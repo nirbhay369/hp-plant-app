@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { uploadImages } from "@/lib/cloudinary";
 
+
 type PlantForm = {
   category: string;
   name: string;
@@ -66,17 +67,47 @@ export default function AddPlant() {
     setForm((prev) => ({ ...prev, [key]: value }));
   };
 
-  const handleImageChange = (files: FileList | null) => {
+  const handleImageChange = async(files: FileList | null) => {
     if (!files) return;
 
+    const heic2any = (await import("heic2any")).default; // ✅ FIX
+
+
     const arr = Array.from(files);
+    let processedFiles: File[] = [];
+     for (const file of arr) {
+    // ✅ HEIC detect
+    if (file.type === "image/heic" || file.name.toLowerCase().endsWith(".heic")) {
+      try {
+        const convertedBlob = await heic2any({
+          blob: file,
+          toType: "image/jpeg",
+          quality: 0.8,
+        });
+         const blob = Array.isArray(convertedBlob) ? convertedBlob[0] : convertedBlob;
+
+         const convertedFile = new File(
+      [blob],
+      file.name.replace(/\.heic$/i, ".jpg"),
+      { type: "image/jpeg" }
+    );
+
+        processedFiles.push(convertedFile);
+      } catch (err) {
+        console.error("HEIC convert error:", err);
+      }
+    } else {
+      processedFiles.push(file);
+    }
+  }
+
 
     setForm((prev) => ({
       ...prev,
-      images: [...prev.images, ...arr],
+      images: [...prev.images, ...processedFiles],
     }));
 
-    const urls = arr.map((file) => URL.createObjectURL(file));
+    const urls = processedFiles.map((file) => URL.createObjectURL(file));
     setPreview((prev) => [...prev, ...urls]);
   };
 
@@ -195,7 +226,7 @@ onChange={(e) => handleChange("category", e.target.value)}
         <input
           type="file"
           multiple
-          accept="image/*,video/*"
+         accept="image/*,image/heic,video/*"
           hidden
           onChange={(e) => handleImageChange(e.target.files)}
         />

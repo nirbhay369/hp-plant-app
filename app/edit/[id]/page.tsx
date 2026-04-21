@@ -121,6 +121,34 @@ export default function EditPlant() {
 
     try {
     let imageUrls = form.images || [];
+      
+    const oldName = 
+      imageUrls.length > 0 && imageUrls[0].includes("plants/")
+        ? imageUrls[0].split("plants/")[1].split("/")[0]
+        : null;
+
+    const newFolder = `plants/${form.name}`;
+
+    // ✅ MOVE OLD IMAGES
+    if (oldName && oldName !== form.name && imageUrls.length > 0) {
+      const res = await fetch("/api/move-images", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          urls: imageUrls,
+          newFolder,
+        }),
+      });
+
+      const data = await res.json();
+
+      if (data.success) {
+        imageUrls = data.urls;
+      }
+    }
+
 
     if (form.newImages?.length) {
       const uploaded = await uploadImages(form.newImages, form.name);
@@ -157,7 +185,7 @@ export default function EditPlant() {
     <div className="container">
       <h1 className="title">🌱 Edit Plant</h1>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+<div className="grid grid-cols-1 gap-4">
       {/* CATEGORY */}
       <div className="field">
         <label>Category</label>
@@ -255,9 +283,6 @@ const isVideo = file.startsWith("blob:")
         })}
       </div>
 
-     
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
       {/* FLOWER */}
       <div className="field">
         <label>Flower / Non-Flower</label>
@@ -395,7 +420,7 @@ const isVideo = file.startsWith("blob:")
         />
       </div>
 
-      </div>
+      
       
       <button onClick={handleSubmit} className="submit">
         {loading ? "Saving..." : "🌿 Update Plant"}
@@ -433,7 +458,7 @@ const isVideo = file.startsWith("blob:")
       <style jsx>{`
         .container {
           width: 100%;
-          max-width: 1200px;
+          max-width: 600px;
           margin: 0 auto;
           padding: 16px;
           background: white;
@@ -473,13 +498,10 @@ const isVideo = file.startsWith("blob:")
         
         .field {
           position: relative; /* important for preventing dropdown overflow breaks */
+          flex: 1;
         }
 
-        .grid {
-          display: grid;
-          grid-template-columns: 1fr;
-          gap: 10px;
-        }
+       
         @media (min-width: 640px) {
           .grid {
             grid-template-columns: 1fr 1fr;

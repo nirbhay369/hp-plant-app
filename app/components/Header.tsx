@@ -41,7 +41,7 @@ const isLoginPage = pathname === "/login";
           </Link>
 
           {/* Right text */}
-          <div className="hidden md:block text-sm font-medium text-gray-700 tracking-wide border-l border-gray-200 pl-4 relative -top-[4px]">
+         <div className="text-xs sm:text-sm font-medium text-gray-700 tracking-wide border-l border-gray-200 pl-2 sm:pl-4">
             <b>H</b>ariprabodham <b>D</b>ham
           </div>
 

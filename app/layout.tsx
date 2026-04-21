@@ -6,6 +6,8 @@ import Navbar from "./components/Navbar";
 import { PlantProvider } from "./context/PlantContext";
 import { usePathname } from "next/navigation";
 
+
+
 export default function RootLayout({
   children,
 }: {
@@ -14,6 +16,8 @@ export default function RootLayout({
   const pathname = usePathname();
 
   const hideNavbar = pathname === "/login";
+
+  
 
   return (
     <html lang="en" className="bg-[#eef5f0]">

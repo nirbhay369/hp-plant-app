@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { supabase } from "@/lib/supabase";
 import { useRouter } from "next/navigation";
 import { usePlant } from "./context/PlantContext";
+import { Pencil, Trash2 } from "lucide-react";
 
 type Plant = {
   id: string;
@@ -35,13 +36,16 @@ export default function Home() {
   const [shapeFilter, setShapeFilter] = useState("");
   const [varietyFilter, setVarietyFilter] = useState("");
   const [page, setPage] = useState(1);
-  const limit = 6;
-
+  const limit = 12;
+  const touchStartX = useRef(0);
+  const touchEndX = useRef(0);
+  const touchStartY = useRef(0);
+  const touchEndY = useRef(0);
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
   const [mediaOpen, setMediaOpen] = useState(false);
   const [mediaList, setMediaList] = useState<string[]>([]);
   const [mediaIndex, setMediaIndex] = useState(0);
-const [deletePlantData, setDeletePlantData] = useState<Plant | null>(null);
+  const [deletePlantData, setDeletePlantData] = useState<Plant | null>(null);
   const fetchPlants = async () => {
     const { data } = await supabase
       .from("plants")
@@ -49,6 +53,9 @@ const [deletePlantData, setDeletePlantData] = useState<Plant | null>(null);
       .order("created_at", { ascending: false });
     if (data) setPlants(data);
   };
+useEffect(() => {
+  window.scrollTo(0, 0);
+}, [page]);
 
   useEffect(() => {
     const loadPlants = async () => {
@@ -99,21 +106,116 @@ const folderPath = parts.join("/");
       (shapeFilter ? p.shape === shapeFilter : true) &&
       (varietyFilter ? p.variety === varietyFilter : true)
     );
-  });
+  })
+  .sort((a, b) =>
+    a.name.localeCompare(b.name, undefined, {
+      sensitivity: "base",
+    })
+);
 
   const current = selectedIndex !== null ? filtered[selectedIndex] : null;
   const totalPages = Math.ceil(filtered.length / limit);
   const paginatedData = filtered.slice((page - 1) * limit, page * limit);
 
-  const next = () => {
-    if (selectedIndex === null) return;
-    setSelectedIndex(selectedIndex === filtered.length - 1 ? 0 : selectedIndex + 1);
+const next = () => {
+  if (selectedIndex === null) return;
+  setSelectedIndex(
+    selectedIndex === filtered.length - 1 ? 0 : selectedIndex + 1
+  );
+};
+
+const prev = () => {
+  if (selectedIndex === null) return;
+  setSelectedIndex(
+    selectedIndex === 0 ? filtered.length - 1 : selectedIndex - 1
+  );
+};
+
+const handleTouchStart = (e: React.TouchEvent) => {
+  touchStartX.current = e.touches[0].clientX;
+   touchEndX.current = e.touches[0].clientX; 
+
+  touchStartY.current = e.touches[0].clientY;
+  touchEndY.current = e.touches[0].clientY;
+};
+
+const handleTouchMove = (e: React.TouchEvent) => {
+  touchEndX.current = e.touches[0].clientX;
+  touchEndY.current = e.touches[0].clientY;
+};  
+
+const handleTouchEnd = () => {
+  const diffX = touchEndX.current - touchStartX.current;
+  const diffY = touchEndY.current - touchStartY.current;
+
+  // ❌ TAP ignore
+  if (Math.abs(diffX) < 70) return;
+
+  // ❌ vertical swipe ignore
+  if (Math.abs(diffX) < Math.abs(diffY)) return;
+
+  // 👉 RIGHT swipe → PREV
+  if (diffX > 0) {
+    if (mediaOpen) {
+      setMediaIndex((prev) =>
+        prev === 0 ? mediaList.length - 1 : prev - 1
+      );
+    } else if (selectedIndex !== null) {
+      prev();
+    }
+  }
+
+  // 👉 LEFT swipe → NEXT
+  else {
+    if (mediaOpen) {
+      setMediaIndex((prev) =>
+        prev === mediaList.length - 1 ? 0 : prev + 1
+      );
+    } else if (selectedIndex !== null) {
+      next();
+    }
+  }
+
+  // reset
+  touchStartX.current = 0;
+  touchEndX.current = 0;
+  touchStartY.current = 0;
+  touchEndY.current = 0;
+};
+
+useEffect(() => {
+  const handleKey = (e: KeyboardEvent) => {
+    const tag = (e.target as HTMLElement).tagName;
+    if (tag === "INPUT" || tag === "TEXTAREA") return;
+
+    // 🎯 MEDIA VIEWER
+    if (mediaOpen) {
+      if (e.key === "ArrowRight") {
+        setMediaIndex((prev) =>
+          prev === mediaList.length - 1 ? 0 : prev + 1
+        );
+      }
+
+      if (e.key === "ArrowLeft") {
+        setMediaIndex((prev) =>
+          prev === 0 ? mediaList.length - 1 : prev - 1
+        );
+      }
+
+      if (e.key === "Escape") setMediaOpen(false);
+    }
+
+    // 🎯 CARD MODAL
+    else if (selectedIndex !== null) {
+      if (e.key === "ArrowRight") next();
+      if (e.key === "ArrowLeft") prev();
+      if (e.key === "Escape") setSelectedIndex(null);
+    }
   };
 
-  const prev = () => {
-    if (selectedIndex === null) return;
-    setSelectedIndex(selectedIndex === 0 ? filtered.length - 1 : selectedIndex - 1);
-  };
+  window.addEventListener("keydown", handleKey);
+  return () => window.removeEventListener("keydown", handleKey);
+}, [mediaOpen, selectedIndex, mediaList]);
 
   return (
     <div className="p-4 max-w-6xl mx-auto bg-gray-50 min-h-screen">
@@ -235,7 +337,7 @@ const folderPath = parts.join("/");
 )}
       {/* CARDS - NEW DESIGN */}
       <div className="grid md:grid-cols-2 gap-6">
-        {paginatedData.map((p, index) => {
+        {paginatedData.map((p, index) => {  
          
 
           const isFlowering = p.flower_type === "Flowering";
@@ -244,7 +346,7 @@ const folderPath = parts.join("/");
             <div
               key={p.id}
               className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden cursor-pointer hover:shadow-md transition"
-              onClick={() => setSelectedIndex(index)}
+              onClick={() => setSelectedIndex(filtered.indexOf(p))}
             >
               {/* Top colored bar */}
               <div
@@ -272,6 +374,7 @@ const folderPath = parts.join("/");
                 </div>
 
                 {/* Media Icons Row */}
+
                 {/* MEDIA PREVIEW */}
 <div className="flex flex-wrap gap-3 my-4">
   {(p.images || []).map((file, i) => {
@@ -304,79 +407,11 @@ const folderPath = parts.join("/");
     );
   })}
 </div>
-                {/* Attributes Grid */}
-                <div className="grid grid-cols-2 gap-x-8 gap-y-3 text-sm font-extrabold text-gray-900">
-                  <div>
-                    <p className="text-gray-400 text-xs uppercase tracking-wide">Type</p>
-                    <p className="font-medium text-gray-800">{p.flower_type}</p>
-                  </div>
-                  <div>
-                    <p className="text-gray-400 text-xs uppercase tracking-wide">Height</p>
-                    <p className="font-medium text-gray-800">{p.height_ft} ft</p>
-                  </div>
-
-                  <div>
-                    <p className="text-gray-400 text-xs uppercase tracking-wide">Color</p>
-                    <p className="font-medium text-gray-800">{p.flower_color || "—"}</p>
-                  </div>
-                  <div>
-                    <p className="text-gray-400 text-xs uppercase tracking-wide">Width</p>
-                    <p className="font-medium text-gray-800">{p.width_ft} ft</p>
-                  </div>
-
-                  <div>
-                    <p className="text-gray-400 text-xs uppercase tracking-wide">Season</p>
-                    <p className="font-medium text-gray-800">{p.flower_duration || "All Season"}</p>
-                  </div>
-                  <div>
-                    <p className="text-gray-400 text-xs uppercase tracking-wide">Shape</p>
-                    <p className="font-medium text-gray-800">{p.shape}</p>
-                  </div>
-
-                  <div>
-                    <p className="text-gray-400 text-xs uppercase tracking-wide">Shade</p>
-                    <p className="font-medium text-gray-800">{p.shade}</p>
-                  </div>
-                  <div>
-                    <p className="text-gray-400 text-xs uppercase tracking-wide">Hedge</p>
-                    <p className="font-medium text-gray-800">{p.hedge}</p>
-                  </div>
-
-                  <div>
-                    <p className="text-gray-400 text-xs uppercase tracking-wide">Variety</p>
-                    <p className="font-medium text-gray-800">{p.variety}</p>
-                  </div>
-                  <div>
-                    <p className="text-gray-400 text-xs uppercase tracking-wide">Water</p>
-                    <p className="font-medium text-gray-800">{p.water}</p>
-                  </div>
-                    <div className="bg-green-50 p-4 rounded-xl mt-4">
-                <p className="text-gray-400 text-xs uppercase mb-1">Uses</p>
-                <p className="text-gray-800">{p.uses}</p>
-              </div>
-                </div>
+               {/* Attributes Grid */}
+            
 
                 {/* Actions */}
-                <div className="flex gap-4 mt-4 pt-4 border-t border-gray-100">
-                  <button
-                    className="text-sm text-green-700 hover:underline"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      router.push(`/edit/${p.id}`);
-                    }}
-                  >
-                    Edit
-                  </button>
-                  <button
-                    className="text-sm text-red-600 hover:underline"
-                   onClick={(e) => {
-                        e.stopPropagation();
-                        setDeletePlantData(p);
-}}
-                  >
-                    Delete
-                  </button>
-                </div>
+              
               </div>
             </div>
           );
@@ -406,22 +441,45 @@ const folderPath = parts.join("/");
 
       {/* FULLSCREEN CARD MODAL */}
       {current && (
-        <div className="fixed inset-0 bg-black/90 z-50 flex items-center justify-center p-4 font-extrabold" >
-          <button
-            onClick={prev}
-            className="absolute left-4 text-white text-4xl hover:scale-110 transition"
-          >
-            ‹
-          </button>
-
+       <div className="fixed inset-0 bg-black/90 z-50 flex items-center justify-center p-4 font-extrabold"
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
+>
+         
           <div className="bg-white w-full max-w-4xl rounded-2xl overflow-auto max-h-[90vh]">
             <div className="p-6">
-              <button
+              <div className="flex justify-end items-center gap-2 mb-2">
+
+  {/* DELETE */}
+  <button
+    onClick={(e) => {
+      e.stopPropagation();
+      if (current) setDeletePlantData(current);
+    }}
+    className="p-2 rounded-lg hover:bg-red-50 transition"
+  >
+    <Trash2 className="w-5 h-5 text-red-500" />
+  </button>
+
+  {/* EDIT */}
+  <button
+    onClick={(e) => {
+      e.stopPropagation();
+      if (current) router.push(`/edit/${current.id}`);
+    }}
+    className="p-2 rounded-lg hover:bg-green-50 transition"
+  >
+    <Pencil className="w-5 h-5 text-green-600" />
+  </button>
+
+  <button
                 onClick={() => setSelectedIndex(null)}
                 className="float-right text-2xl text-gray-400 hover:text-gray-600"
               >
                 ✕
               </button>
+</div>
 
               <h2 className="text-3xl font-bold text-gray-800">{current.name}</h2>
               <p className="text-green-600 mb-4">{current.category}</p>
@@ -507,18 +565,17 @@ const folderPath = parts.join("/");
             </div>
           </div>
 
-          <button
-            onClick={next}
-            className="absolute right-4 text-white text-4xl hover:scale-110 transition"
-          >
-            ›
-          </button>
+     
         </div>
       )}
 
       {/* MEDIA FULLSCREEN VIEWER */}
       {mediaOpen && (
-        <div className="fixed inset-0 bg-black z-[60] flex items-center justify-center">
+        <div className="fixed inset-0 bg-black z-[60] flex items-center justify-center"
+          onTouchStart={handleTouchStart}
+          onTouchMove={handleTouchMove}
+            onTouchEnd={handleTouchEnd}>
+
           <button
             onClick={() => setMediaOpen(false)}
             className="absolute top-5 right-5 text-white text-3xl hover:scale-110 transition"
@@ -526,24 +583,16 @@ const folderPath = parts.join("/");
             ✕
           </button>
 
-          <button
-            onClick={() =>
-              setMediaIndex((prev) =>
-                prev === 0 ? mediaList.length - 1 : prev - 1
-              )
-            }
-            className="absolute left-5 text-white text-5xl hover:scale-110 transition"
-          >
-            ‹
-          </button>
+          
 
           {mediaList[mediaIndex]?.match(/\.(mp4|webm|mov|avi)$/i) ? (
-            <video
-              src={mediaList[mediaIndex]}
-              controls
-              autoPlay
-              className="max-w-full max-h-full"
-            />
+        <div className="max-w-full max-h-full flex items-center justify-center">
+         <video
+          src={mediaList[mediaIndex]}
+          controls
+          autoPlay
+          className="max-w-full max-h-full object-contain"/>
+</div>
           ) : (
             <img
               src={mediaList[mediaIndex]}
@@ -551,16 +600,7 @@ const folderPath = parts.join("/");
             />
           )}
 
-          <button
-            onClick={() =>
-              setMediaIndex((prev) =>
-                prev === mediaList.length - 1 ? 0 : prev + 1
-              )
-            }
-            className="absolute right-5 text-white text-5xl hover:scale-110 transition"
-          >
-            ›
-          </button>
+       
         </div>
       )}
       {deletePlantData && (
@@ -641,7 +681,7 @@ const folderPath = parts.join("/");
 .delete {
   color: #ff3b30;
   font-weight: 600;
-}
+} 
     `}</style>
   </div>
 )}

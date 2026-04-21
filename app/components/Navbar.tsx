@@ -30,7 +30,7 @@ export default function Navbar() {
           {/* Home */}
           <span
             onClick={() => router.push("/")}
-            className="text-xs font-medium py-2 rounded-lg text-center truncate border border-gray-200 bg-white text-gray-600 cursor-pointer hover:border-green-500 hover:text-green-600 hover:bg-green-50 transition"
+           className="text-sm font-medium px-4 py-2 rounded-lg border border-gray-200 bg-white text-gray-600 cursor-pointer hover:border-green-500 hover:text-green-600 hover:bg-green-50 transition flex items-center justify-center"
           >
             Home
           </span>

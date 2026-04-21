@@ -1,4 +1,5 @@
 import { v2 as cloudinary } from "cloudinary";
+
 import { NextResponse } from "next/server";
 
 cloudinary.config({
@@ -7,9 +8,12 @@ cloudinary.config({
   api_secret: process.env.CLOUDINARY_API_SECRET,
 });
 
+
+
 export async function POST(req: Request) {
   try {
     const { publicId, folderPath, resourceType } = await req.json();
+
 
     // 🔥 CASE 1: FULL FOLDER DELETE
     if (folderPath) {
@@ -24,9 +28,31 @@ export async function POST(req: Request) {
         resource_type: "video",
         type: "upload", 
       });
-      await new Promise((res) => setTimeout(res, 500));
+     let next_cursor;
 
-      await cloudinary.api.delete_folder(folderPath);
+do {
+  const res = await cloudinary.api.resources({
+    type: "upload",
+    prefix: folderPath,
+    max_results: 500,
+    next_cursor,
+  });
+
+  const publicIds = res.resources.map((r: any) => r.public_id);
+
+  if (publicIds.length > 0) {
+    await cloudinary.api.delete_resources(publicIds);
+  }
+
+  next_cursor = res.next_cursor;
+} while (next_cursor);
+
+// 🔥 finally delete folder
+try {
+  await cloudinary.api.delete_folder(folderPath);
+} catch (err: any) {
+  if (err?.error?.http_code !== 404) throw err;
+}
 
       return NextResponse.json({ success: true });
     }
@@ -46,6 +72,9 @@ export async function POST(req: Request) {
 
   } catch (error) {
     console.log("❌ DELETE ERROR:", error);
-    return NextResponse.json({ success: false, error });
+    return NextResponse.json({ success: false, error: (error as any)?.message || "Delete failed" },
+  { status: 500 });
   }
+  
 }
+
