@@ -30,7 +30,7 @@ export default function Navbar() {
           {/* Home */}
           <span
             onClick={() => router.push("/")}
-           className="text-sm font-medium px-4 py-2 rounded-lg border border-gray-200 bg-white text-gray-600 cursor-pointer hover:border-green-500 hover:text-green-600 hover:bg-green-50 transition flex items-center justify-center"
+            className="text-sm font-medium px-4 py-2 rounded-lg border border-gray-200 bg-white text-gray-600 cursor-pointer hover:border-green-500 hover:text-green-600 hover:bg-green-50 transition flex items-center justify-center"
           >
             Home
           </span>
@@ -46,17 +46,17 @@ export default function Navbar() {
           {/* Plant Health */}
           <span
             onClick={() => router.push("/phe")}
-           className="text-xs md:text-sm font-medium py-2 px-1 md:px-3 rounded-lg text-center truncate border border-gray-200 bg-white text-gray-600 cursor-pointer hover:border-green-500 hover:text-green-600 hover:bg-green-50 transition"
+            className="text-xs md:text-sm font-medium py-2 px-1 md:px-3 rounded-lg text-center truncate border border-gray-200 bg-white text-gray-600 cursor-pointer hover:border-green-500 hover:text-green-600 hover:bg-green-50 transition"
           >
-          Plant Health & Equipment
+            Tuhi
           </span>
 
           {/* Add PHE */}
           <span
             onClick={() => router.push("/phe/add")}
-           className="text-xs md:text-sm font-medium py-2 px-1 md:px-3 rounded-lg text-center truncate bg-green-600 border border-green-600 text-white cursor-pointer hover:bg-green-700 transition"
-          >   
-           +Add PHE
+            className="text-xs md:text-sm font-medium py-2 px-1 md:px-3 rounded-lg text-center truncate bg-green-600 border border-green-600 text-white cursor-pointer hover:bg-green-700 transition"
+          >
+            Add Tuhi
           </span>
 
         </div>

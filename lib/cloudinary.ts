@@ -1,6 +1,7 @@
 export const uploadImages = async (files: File[], plantName: string) => {
   const MAX_IMAGE_SIZE = 10 * 1024 * 1024; // 10MB
 
+
   const uploadFile = async (file: File) => {
     const isVideo = file.type.startsWith("video");
     const isImage = file.type.startsWith("image");
@@ -68,7 +69,7 @@ const uploadWithRetry = async (file: File, retries = 2): Promise<string> => {
   const results: string[] = [];
 
   for (const file of files) {
-    const url = await uploadFile(file);
+    const url = await uploadWithRetry(file);
     results.push(url);
   }
   

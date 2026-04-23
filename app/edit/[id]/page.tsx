@@ -59,8 +59,8 @@ export default function EditPlant() {
 
     fetchPlant();
   }, [id]);
-  
-  
+
+
 
 
   if (!form) return <div className="container">Loading...</div>;
@@ -83,36 +83,36 @@ export default function EditPlant() {
     setForm((prev) =>
       prev
         ? {
-            ...prev,
-            newImages: [...(prev.newImages || []), ...arr],
-          }
+          ...prev,
+          newImages: [...(prev.newImages || []), ...arr],
+        }
         : prev
     );
   };
 
- const removeImage = async (index: number) => {
-  const imageToDelete = preview[index];
+  const removeImage = async (index: number) => {
+    const imageToDelete = preview[index];
 
-  // ✅ delete from cloudinary (only if already uploaded)
-  if (imageToDelete && !imageToDelete.startsWith("blob:")) {
-    await deleteImage(imageToDelete);
-  }
+    // ✅ delete from cloudinary (only if already uploaded)
+    if (imageToDelete && !imageToDelete.startsWith("blob:")) {
+      await deleteImage(imageToDelete);
+    }
 
-  const updatedPreview = [...preview];
-  updatedPreview.splice(index, 1);
+    const updatedPreview = [...preview];
+    updatedPreview.splice(index, 1);
 
-  setPreview(updatedPreview);
+    setPreview(updatedPreview);
 
-  setForm((prev) =>
-    prev
-      ? {
+    setForm((prev) =>
+      prev
+        ? {
           ...prev,
           images: updatedPreview.filter((url) => !url.startsWith("blob:")),
           newImages: (prev.newImages || []).filter((_, i) => i !== index),
         }
-      : prev
-  );
-};
+        : prev
+    );
+  };
 
   const handleSubmit = async () => {
     if (!id) return;
@@ -120,59 +120,75 @@ export default function EditPlant() {
     setLoading(true);
 
     try {
-    let imageUrls = form.images || [];
-      
-    const oldName = 
-      imageUrls.length > 0 && imageUrls[0].includes("plants/")
-        ? imageUrls[0].split("plants/")[1].split("/")[0]
-        : null;
+      let imageUrls = form.images || [];
 
-    const newFolder = `plants/${form.name}`;
+      // ✅ DEBUG: Check first image URL
+      console.log("🔍 form.images[0]:", imageUrls[0]);
+      console.log("🔍 form.name:", form.name);
+      console.log("🔍 includes plants/:", imageUrls[0]?.includes("plants/"));
 
-    // ✅ MOVE OLD IMAGES
-    if (oldName && oldName !== form.name && imageUrls.length > 0) {
-      const res = await fetch("/api/move-images", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          urls: imageUrls,
-          newFolder,
-        }),
-      });
+      const oldName =
+        imageUrls.length > 0 && imageUrls[0].includes("plants/")
+          ? decodeURIComponent(imageUrls[0].split("plants/")[1].split("/")[0])
+          : null;
 
-      const data = await res.json();
+      console.log("🔍 oldName extracted:", oldName);
+      console.log("🔍 oldName !== form.name:", oldName !== form.name);
 
-      if (data.success) {
-        imageUrls = data.urls;
+      const newFolder = `plants/${form.name}`;
+
+      // ✅ MOVE OLD IMAGES
+      if (oldName && oldName !== form.name && imageUrls.length > 0) {
+        console.log("✅ Rename triggered! Moving from", oldName, "→", newFolder);
+        const res = await fetch("/api/editImg", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            urls: imageUrls,
+            newFolder,
+          }),
+        });
+
+        const data = await res.json();
+        console.log("📦 editImg API response:", data);
+
+        if (data.success) {
+          imageUrls = data.urls;
+          console.log("✅ imageUrls updated to:", imageUrls);
+        } else {
+          console.error("❌ Rename failed:", data.error);
+          alert("⚠️ Cloudinary rename failed: " + (data.error || "unknown error"));
+        }
+      } else {
+        console.log("⏭️ Rename NOT triggered. oldName:", oldName, "form.name:", form.name);
       }
-    }
 
 
-    if (form.newImages?.length) {
-      const uploaded = await uploadImages(form.newImages, form.name);
-      imageUrls = [...imageUrls, ...uploaded];
-    }
+      if (form.newImages?.length) {
+        const uploaded = await uploadImages(form.newImages, form.name);
+        imageUrls = [...imageUrls, ...uploaded];
+      }
 
-    const cleanForm = { ...form };
-    delete cleanForm.newImages;
+      const cleanForm = { ...form };
+      delete cleanForm.newImages;
 
-    const { error } = await supabase
-      .from("plants")
-      .update({
-        ...cleanForm,
-        images: imageUrls,
-      })
-      .eq("id", id);
+      const { error } = await supabase
+        .from("plants")
+        .update({
+          ...cleanForm,
+          images: imageUrls,
+        })
+        .eq("id", id);
 
-    if (error) {
-      alert("❌ " + error.message);
-      return;
-    }
+      if (error) {
+        alert("❌ " + error.message);
+        return;
+      }
 
-    alert("✅ Updated");
-    router.push("/");
+      alert("✅ Updated");
+      router.push("/");
     } catch (error) {
       console.error(error);
       alert("Error uploading images. Please try again.");
@@ -185,47 +201,47 @@ export default function EditPlant() {
     <div className="container">
       <h1 className="title">🌱 Edit Plant</h1>
 
-<div className="grid grid-cols-1 gap-4">
-      {/* CATEGORY */}
-      <div className="field">
-        <label>Category</label>
-        <select
-          value={form.category}
-          onChange={(e) => handleChange("category", e.target.value)}
-        >
-          <option>Big tree ( મોટા ઝાડ )</option>
-  <option>Small tree ( નાના ઝાડ )</option>
-  <option>Palm tree ( પામ )</option>
-  <option>Flowering plant ( ફુલ વાળા છોડ )</option>
-  <option>Non flowering plants ( છોડવાઓ )</option>
-  <option>Semi shade plant ( છાયા વાળા છોડ )</option>
-  <option>Shape / cutting plant ( આકાર વાળા છોડ )</option>
-  <option>Draft plants ( ડ્રાફ્ટ છોડ )</option>
-  <option>Underground plant ( ગાંઠો  )</option>
-  <option>Ground cover plant ( પથરાતા છોડ )</option>
-  <option>lawn ( લોન )</option>
-  <option>Creeper ( વેલ )</option>
-  <option>Ornamental plants</option>
-  <option>Indoor plant</option>
-  <option>Seasonal plant</option>
-  <option>Medicinal plant ( આર્યુવેદિક વનસ્પતિ )</option>
-  <option>Fruit plant  ( ફળ ના ઝાડ )</option>
-  <option>Extra 1  ( વધારા ના 1 )</option>
-  <option>Extra 2  ( વધારા ના 2 )</option>
-        </select>
+      <div className="grid grid-cols-1 gap-4">
+        {/* CATEGORY */}
+        <div className="field">
+          <label>Category</label>
+          <select
+            value={form.category}
+            onChange={(e) => handleChange("category", e.target.value)}
+          >
+            <option>Big tree ( મોટા ઝાડ )</option>
+            <option>Small tree ( નાના ઝાડ )</option>
+            <option>Palm tree ( પામ )</option>
+            <option>Flowering plant ( ફુલ વાળા છોડ )</option>
+            <option>Non flowering plants ( છોડવાઓ )</option>
+            <option>Semi shade plant ( છાયા વાળા છોડ )</option>
+            <option>Shape / cutting plant ( આકાર વાળા છોડ )</option>
+            <option>Draft plants ( ડ્રાફ્ટ છોડ )</option>
+            <option>Underground plant ( ગાંઠો  )</option>
+            <option>Ground cover plant ( પથરાતા છોડ )</option>
+            <option>lawn ( લોન )</option>
+            <option>Creeper ( વેલ )</option>
+            <option>Ornamental plants</option>
+            <option>Indoor plant</option>
+            <option>Seasonal plant</option>
+            <option>Medicinal plant ( આર્યુવેદિક વનસ્પતિ )</option>
+            <option>Fruit plant  ( ફળ ના ઝાડ )</option>
+            <option>Extra 1  ( વધારા ના 1 )</option>
+            <option>Extra 2  ( વધારા ના 2 )</option>
+          </select>
+        </div>
+
+        {/* NAME */}
+        <div className="field">
+          <label>Plant Name</label>
+          <input
+            value={form.name}
+            onChange={(e) => handleChange("name", e.target.value)}
+          />
+        </div>
       </div>
 
-      {/* NAME */}
-      <div className="field">
-        <label>Plant Name</label>
-        <input
-          value={form.name}
-          onChange={(e) => handleChange("name", e.target.value)}
-        />
-      </div>
-      </div>
 
-      
 
       {/* UPLOAD */}
       <label className="uploadBtn">
@@ -244,9 +260,9 @@ export default function EditPlant() {
         {preview.map((file, i) => {
           const oldImagesCount = form.images?.length || 0;
 
-const isVideo = file.startsWith("blob:")
-  ? form.newImages?.[i - oldImagesCount]?.type.startsWith("video")
-  : file.match(/\.(mp4|webm|mov|avi)$/i);
+          const isVideo = file.startsWith("blob:")
+            ? form.newImages?.[i - oldImagesCount]?.type.startsWith("video")
+            : file.match(/\.(mp4|webm|mov|avi)$/i);
 
           return (
             <div key={i} className="imgBox">
@@ -268,10 +284,10 @@ const isVideo = file.startsWith("blob:")
                   <div className="duration">
                     {durations[i]
                       ? `${Math.floor(durations[i] / 60)}:${Math.floor(
-                          durations[i] % 60
-                        )
-                          .toString()
-                          .padStart(2, "0")}`
+                        durations[i] % 60
+                      )
+                        .toString()
+                        .padStart(2, "0")}`
                       : ""}
                   </div>
                 </>
@@ -328,21 +344,21 @@ const isVideo = file.startsWith("blob:")
 
       {/* HEIGHT WIDTH */}
       <div className="field">
-        
-          <label>Height (ft)</label>
-          <input
-            value={form.height_ft}
-            onChange={(e) => handleChange("height_ft", e.target.value)}
-          />
-        </div>
 
-        <div className="field">
-          <label>Width (ft)</label>
-          <input
-            value={form.width_ft}
-            onChange={(e) => handleChange("width_ft", e.target.value)}
-          />
-        </div>
+        <label>Height (ft)</label>
+        <input
+          value={form.height_ft}
+          onChange={(e) => handleChange("height_ft", e.target.value)}
+        />
+      </div>
+
+      <div className="field">
+        <label>Width (ft)</label>
+        <input
+          value={form.width_ft}
+          onChange={(e) => handleChange("width_ft", e.target.value)}
+        />
+      </div>
       {/* HEDGE */}
       <div className="field">
         <label>Hedge</label>
@@ -386,14 +402,16 @@ const isVideo = file.startsWith("blob:")
 
       {/* SHAPE */}
       <div className="field">
-        <label>Shape</label>
+        <label>Shape / Cutting</label>
         <select
           value={form.shape}
           onChange={(e) => handleChange("shape", e.target.value)}
         >
           <option value="">Select</option>
-          <option>Multi-Shape</option>
           <option>Single-Shape</option>
+          <option>Multi-Shape</option>
+          <option>Natural canopy</option>
+
         </select>
       </div>
 
@@ -420,39 +438,39 @@ const isVideo = file.startsWith("blob:")
         />
       </div>
 
-      
-      
+
+
       <button onClick={handleSubmit} className="submit">
         {loading ? "Saving..." : "🌿 Update Plant"}
       </button>
-  {deleteIndex !== null && (
-    <div className="confirmOverlay">
-    <div className="confirmBox">
-      <h3>Confirmation</h3>
-      <p>Are you sure you want to delete this image/video?</p>
+      {deleteIndex !== null && (
+        <div className="confirmOverlay">
+          <div className="confirmBox">
+            <h3>Confirmation</h3>
+            <p>Are you sure you want to delete this image/video?</p>
 
-      <div className="actions">
-        <button
-          className="cancel"
-          onClick={() => setDeleteIndex(null)}
-        >
-          Cancel
-        </button>
-        
+            <div className="actions">
+              <button
+                className="cancel"
+                onClick={() => setDeleteIndex(null)}
+              >
+                Cancel
+              </button>
 
-        <button
-          className="delete"
-          onClick={() => {
-            removeImage(deleteIndex);
-            setDeleteIndex(null);
-          }}
-        >
-          Delete
-        </button>
-      </div>
-    </div>
-  </div>
-)}
+
+              <button
+                className="delete"
+                onClick={() => {
+                  removeImage(deleteIndex);
+                  setDeleteIndex(null);
+                }}
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ✅ FIXED CSS */}
       <style jsx>{`
@@ -504,7 +522,7 @@ const isVideo = file.startsWith("blob:")
        
         @media (min-width: 640px) {
           .grid {
-            grid-template-columns: 1fr 1fr;
+            grid-template-columns: 1fr ;
           }
         }
 

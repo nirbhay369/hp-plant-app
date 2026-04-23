@@ -35,8 +35,7 @@ export default function Home() {
   const [hedgeFilter, setHedgeFilter] = useState("");
   const [shapeFilter, setShapeFilter] = useState("");
   const [varietyFilter, setVarietyFilter] = useState("");
-  const [page, setPage] = useState(1);
-  const limit = 12;
+
   const touchStartX = useRef(0);
   const touchEndX = useRef(0);
   const touchStartY = useRef(0);
@@ -46,6 +45,7 @@ export default function Home() {
   const [mediaList, setMediaList] = useState<string[]>([]);
   const [mediaIndex, setMediaIndex] = useState(0);
   const [deletePlantData, setDeletePlantData] = useState<Plant | null>(null);
+
   const fetchPlants = async () => {
     const { data } = await supabase
       .from("plants")
@@ -53,9 +53,7 @@ export default function Home() {
       .order("created_at", { ascending: false });
     if (data) setPlants(data);
   };
-useEffect(() => {
-  window.scrollTo(0, 0);
-}, [page]);
+
 
   useEffect(() => {
     const loadPlants = async () => {
@@ -65,11 +63,11 @@ useEffect(() => {
     loadPlants();
   }, []);
   useEffect(() => {
-  setPlantCount(plants.length);
-}, [plants]);
+    setPlantCount(plants.length);
+  }, [plants]);
 
   const deletePlant = async (plant: Plant) => {
-    
+
 
     try {
       if (plant.images?.length) {
@@ -77,9 +75,9 @@ useEffect(() => {
         let publicId = url.split("/upload/")[1];
         publicId = publicId.replace(/^v\d+\//, "");
         publicId = decodeURIComponent(publicId);
-      const parts = publicId.split("/");
-parts.pop();
-const folderPath = parts.join("/");
+        const parts = publicId.split("/");
+        parts.pop();
+        const folderPath = parts.join("/");
 
         await fetch("/api/delete-image", {
           method: "POST",
@@ -107,238 +105,236 @@ const folderPath = parts.join("/");
       (varietyFilter ? p.variety === varietyFilter : true)
     );
   })
-  .sort((a, b) =>
-    a.name.localeCompare(b.name, undefined, {
-      sensitivity: "base",
-    })
-);
+    .sort((a, b) =>
+      a.name.localeCompare(b.name, undefined, {
+        sensitivity: "base",
+      })
+    );
 
   const current = selectedIndex !== null ? filtered[selectedIndex] : null;
-  const totalPages = Math.ceil(filtered.length / limit);
-  const paginatedData = filtered.slice((page - 1) * limit, page * limit);
 
-const next = () => {
-  if (selectedIndex === null) return;
-  setSelectedIndex(
-    selectedIndex === filtered.length - 1 ? 0 : selectedIndex + 1
-  );
-};
-
-const prev = () => {
-  if (selectedIndex === null) return;
-  setSelectedIndex(
-    selectedIndex === 0 ? filtered.length - 1 : selectedIndex - 1
-  );
-};
-
-const handleTouchStart = (e: React.TouchEvent) => {
-  touchStartX.current = e.touches[0].clientX;
-   touchEndX.current = e.touches[0].clientX; 
-
-  touchStartY.current = e.touches[0].clientY;
-  touchEndY.current = e.touches[0].clientY;
-};
-
-const handleTouchMove = (e: React.TouchEvent) => {
-  touchEndX.current = e.touches[0].clientX;
-  touchEndY.current = e.touches[0].clientY;
-};  
-
-const handleTouchEnd = () => {
-  const diffX = touchEndX.current - touchStartX.current;
-  const diffY = touchEndY.current - touchStartY.current;
-
-  // ❌ TAP ignore
-  if (Math.abs(diffX) < 70) return;
-
-  // ❌ vertical swipe ignore
-  if (Math.abs(diffX) < Math.abs(diffY)) return;
-
-  // 👉 RIGHT swipe → PREV
-  if (diffX > 0) {
-    if (mediaOpen) {
-      setMediaIndex((prev) =>
-        prev === 0 ? mediaList.length - 1 : prev - 1
-      );
-    } else if (selectedIndex !== null) {
-      prev();
-    }
-  }
-
-  // 👉 LEFT swipe → NEXT
-  else {
-    if (mediaOpen) {
-      setMediaIndex((prev) =>
-        prev === mediaList.length - 1 ? 0 : prev + 1
-      );
-    } else if (selectedIndex !== null) {
-      next();
-    }
-  }
-
-  // reset
-  touchStartX.current = 0;
-  touchEndX.current = 0;
-  touchStartY.current = 0;
-  touchEndY.current = 0;
-};
-
-useEffect(() => {
-  const handleKey = (e: KeyboardEvent) => {
-    const tag = (e.target as HTMLElement).tagName;
-    if (tag === "INPUT" || tag === "TEXTAREA") return;
-
-    // 🎯 MEDIA VIEWER
-    if (mediaOpen) {
-      if (e.key === "ArrowRight") {
-        setMediaIndex((prev) =>
-          prev === mediaList.length - 1 ? 0 : prev + 1
-        );
-      }
-
-      if (e.key === "ArrowLeft") {
-        setMediaIndex((prev) =>
-          prev === 0 ? mediaList.length - 1 : prev - 1
-        );
-      }
-
-      if (e.key === "Escape") setMediaOpen(false);
-    }
-
-    // 🎯 CARD MODAL
-    else if (selectedIndex !== null) {
-      if (e.key === "ArrowRight") next();
-      if (e.key === "ArrowLeft") prev();
-      if (e.key === "Escape") setSelectedIndex(null);
-    }
+  const next = () => {
+    if (selectedIndex === null) return;
+    setSelectedIndex(
+      selectedIndex === filtered.length - 1 ? 0 : selectedIndex + 1
+    );
   };
 
-  window.addEventListener("keydown", handleKey);
-  return () => window.removeEventListener("keydown", handleKey);
-}, [mediaOpen, selectedIndex, mediaList]);
+  const prev = () => {
+    if (selectedIndex === null) return;
+    setSelectedIndex(
+      selectedIndex === 0 ? filtered.length - 1 : selectedIndex - 1
+    );
+  };
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    touchStartX.current = e.touches[0].clientX;
+    touchEndX.current = e.touches[0].clientX;
+
+    touchStartY.current = e.touches[0].clientY;
+    touchEndY.current = e.touches[0].clientY;
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    touchEndX.current = e.touches[0].clientX;
+    touchEndY.current = e.touches[0].clientY;
+  };
+
+  const handleTouchEnd = () => {
+    const diffX = touchEndX.current - touchStartX.current;
+    const diffY = touchEndY.current - touchStartY.current;
+
+    // ❌ TAP ignore
+    if (Math.abs(diffX) < 70) return;
+
+    // ❌ vertical swipe ignore
+    if (Math.abs(diffX) < Math.abs(diffY)) return;
+
+    // 👉 RIGHT swipe → PREV
+    if (diffX > 0) {
+      if (mediaOpen) {
+        setMediaIndex((prev) =>
+          prev === 0 ? 0 : prev - 1
+        );
+      } else if (selectedIndex !== null) {
+        prev();
+      }
+    }
+
+    // 👉 LEFT swipe → NEXT
+    else {
+      if (mediaOpen) {
+        setMediaIndex((prev) =>
+          prev === mediaList.length - 1 ? mediaList.length - 1 : prev + 1
+        );
+      } else if (selectedIndex !== null) {
+        next();
+      }
+    }
+
+    // reset
+    touchStartX.current = 0;
+    touchEndX.current = 0;
+    touchStartY.current = 0;
+    touchEndY.current = 0;
+  };
+
+  useEffect(() => {
+    const handleKey = (e: KeyboardEvent) => {
+      const tag = (e.target as HTMLElement).tagName;
+      if (tag === "INPUT" || tag === "TEXTAREA") return;
+
+      // 🎯 MEDIA VIEWER
+      if (mediaOpen) {
+        if (e.key === "ArrowRight") {
+          setMediaIndex((prev) =>
+            prev === mediaList.length - 1 ? mediaList.length - 1 : prev + 1
+          );
+        }
+
+        if (e.key === "ArrowLeft") {
+          setMediaIndex((prev) =>
+            prev === 0 ? 0 : prev - 1
+          );
+        }
+
+        if (e.key === "Escape") setMediaOpen(false);
+      }
+
+      // 🎯 CARD MODAL
+      else if (selectedIndex !== null) {
+        if (e.key === "ArrowRight") next();
+        if (e.key === "ArrowLeft") prev();
+        if (e.key === "Escape") setSelectedIndex(null);
+      }
+    };
+
+    window.addEventListener("keydown", handleKey);
+    return () => window.removeEventListener("keydown", handleKey);
+  }, [mediaOpen, selectedIndex, mediaList]);
 
   return (
     <div className="p-4 max-w-6xl mx-auto bg-gray-50 min-h-screen">
       {/* NAVBAR */}
- 
+
 
       {/* SEARCH */}
       <input
         value={search}
         onChange={(e) => setSearch(e.target.value)}
         placeholder="Search plant..."
-        className="w-full px-4 py-2 border rounded-lg bg-white text-green-700"
+        className="w-full px-4 py-2 border rounded-lg bg-white text-green-700 font-bold"
       />
-      <br/>
-       <br/>
+      <br />
+      <br />
 
       {/* FILTERS */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 mb-6">
+      <div className="grid grid-cols-2 gap-3 mb-6">
         <select
           value={categoryFilter}
           onChange={(e) => setCategoryFilter(e.target.value)}
           className="w-full min-w-0 px-3 py-2 border border-gray-300 rounded-lg 
-                  bg-white text-green-700 text-sm
+                  bg-white text-green-700 text-l font-bold
                     focus:outline-none focus:ring-2 focus:ring-green-500">
-          <option value="">Select Category</option>
-          <option>Big tree ( મોટા ઝાડ )</option>
-          <option>Small tree ( નાના ઝાડ )</option>
-          <option>Palm tree ( પામ )</option>
-          <option>Flowering plant ( ફુલ વાળા છોડ )</option>
-          <option>Non flowering plants ( છોડવાઓ )</option>
-          <option>Semi shade plant ( છાયા વાળા છોડ )</option>
-          <option>Shape / cutting plant ( આકાર વાળા છોડ )</option>
-          <option>Dwarf plants ( ડ્રાફ્ટ છોડ )</option>
-          <option>Underground plant ( ગાંઠો )</option>
-          <option>Ground cover plant ( પથરાતા છોડ )</option>
-          <option>lawn ( લોન )</option>
-          <option>Creeper ( વેલ )</option>
-          <option>Ornamental plants</option>
-          <option>Indoor plant</option>
-          <option>Seasonal plant</option>
-          <option>Medicinal plant ( આર્યુવેદિક વનસ્પતિ )</option>
-          <option>Fruit plant ( ફળ ના ઝાડ )</option>
+          <option className="font-bold" value="">Select Category</option>
+          <option className="font-bold">Big tree ( મોટા ઝાડ )</option>
+          <option className="font-bold">Small tree ( નાના ઝાડ )</option>
+          <option className="font-bold">Palm tree ( પામ )</option>
+          <option className="font-bold">Flowering plant ( ફુલ વાળા છોડ )</option>
+          <option className="font-bold">Non flowering plants ( છોડવાઓ )</option>
+          <option className="font-bold">Semi shade plant ( છાયા વાળા છોડ )</option>
+          <option className="font-bold">Shape / cutting plant ( આકાર વાળા છોડ )</option>
+          <option className="font-bold">Dwarf plants ( ડ્રાફ્ટ છોડ )</option>
+          <option className="font-bold">Underground plant ( ગાંઠો )</option>
+          <option className="font-bold">Ground cover plant ( પથરાતા છોડ )</option>
+          <option className="font-bold">lawn ( લોન )</option>
+          <option className="font-bold">Creeper ( વેલ )</option>
+          <option className="font-bold">Ornamental plants</option>
+          <option className="font-bold">Indoor plant</option>
+          <option className="font-bold">Seasonal plant</option>
+          <option className="font-bold">Medicinal plant ( આર્યુવેદિક વનસ્પતિ )</option>
+          <option className="font-bold">Fruit plant ( ફળ ના ઝાડ )</option>
         </select>
 
         <select
           value={shadeFilter}
           onChange={(e) => setShadeFilter(e.target.value)}
           className="w-full px-4 py-2 border border-gray-300 rounded-lg 
-             bg-white text-green-700 
+             bg-white text-green-700 font-bold
              focus:outline-none focus:ring-2 focus:ring-green-500"
         >
-          <option value="">Select Shade</option>
-          <option value="Full - Sun">Full - Sun</option>
-          <option value="Semi-Shade">Semi-Shade</option>
-          <option value="Indoor">Indoor</option>
+          <option className="font-bold" value="">Select Shade</option>
+          <option className="font-bold" value="Full - Sun">Full - Sun</option>
+          <option className="font-bold" value="Semi-Shade">Semi-Shade</option>
+          <option className="font-bold" value="Indoor">Indoor</option>
         </select>
 
         <select
           value={flowerFilter}
           onChange={(e) => setFlowerFilter(e.target.value)}
           className="w-full px-4 py-2 border border-gray-300 rounded-lg 
-             bg-white text-green-700 
+             bg-white text-green-700 font-bold
              focus:outline-none focus:ring-2 focus:ring-green-500"
         >
-          <option value="">Select Flowering Type</option>
-          <option value="Flowering">Flowering</option>
-          <option value="Non-Flowering">Non-Flowering</option>
+          <option className="font-bold" value="">Select Flowering Type</option>
+          <option className="font-bold" value="Flowering">Flowering</option>
+          <option className="font-bold" value="Non-Flowering">Non-Flowering</option>
         </select>
 
         <select
           value={hedgeFilter}
           onChange={(e) => setHedgeFilter(e.target.value)}
           className="w-full px-4 py-2 border border-gray-300 rounded-lg 
-             bg-white text-green-700 
+             bg-white text-green-700 font-bold
              focus:outline-none focus:ring-2 focus:ring-green-500"
         >
-          <option value="">Select Hedge</option>
-          <option>Hedge</option>
-          <option>Non-Hedge</option>
+          <option className="font-bold" value="">Select Hedge</option>
+          <option className="font-bold">Hedge</option>
+          <option className="font-bold">Non-Hedge</option>
         </select>
 
         <select
           value={shapeFilter}
           onChange={(e) => setShapeFilter(e.target.value)}
           className="w-full px-4 py-2 border border-gray-300 rounded-lg 
-             bg-white text-green-700 
+             bg-white text-green-700 font-bold
              focus:outline-none focus:ring-2 focus:ring-green-500"
         >
-          <option value="">Select Shape</option>
-          <option>Multi-Shape</option>
-          <option>Single</option>
+          <option className="font-bold" value="">Select Shape</option>
+          <option className="font-bold">Multi-Shape</option>
+          <option className="font-bold">Single</option>
         </select>
 
         <select
           value={varietyFilter}
           onChange={(e) => setVarietyFilter(e.target.value)}
           className="w-full px-4 py-2 border border-gray-300 rounded-lg 
-             bg-white text-green-700 
+             bg-white text-green-700 font-bold
              focus:outline-none focus:ring-2 focus:ring-green-500"
         >
-          <option value="">Select Variety</option>
-          <option>Simple</option>
-          <option>Varigated</option>
-          <option>Dwarf</option>
+          <option className="font-bold" value="">Select Variety</option>
+          <option className="font-bold">Simple</option>
+          <option className="font-bold">Varigated</option>
+          <option className="font-bold">Dwarf</option>
         </select>
       </div>
 
       {/* SHOWING COUNT */}
-   {filtered.length === 0 ? (
-  <p className="text-center text-gray-500 mt-10 text-lg">
-    {plants.length === 0
-      ? "🌿 No plants added yet"
-      : "❌ No plants match your filters"}
-  </p>
-) : (
-  <p className="text-sm text-gray-500 mb-4">
-    SHOWING {paginatedData.length} OF {filtered.length} PLANTS
-  </p>
-)}
+      {filtered.length === 0 ? (
+        <p className="text-center text-gray-500 mt-10 text-lg">
+          {plants.length === 0
+            ? "🌿 No plants added yet"
+            : "❌ No plants match your filters"}
+        </p>
+      ) : (
+        <p className="text-sm text-gray-500 mb-4">
+          SHOWING {filtered.length} PLANTS
+        </p>
+      )}
       {/* CARDS - NEW DESIGN */}
-      <div className="grid md:grid-cols-2 gap-6">
-        {paginatedData.map((p, index) => {  
-         
+      <div id="cards-start" className="grid md:grid-cols-2 gap-6 scroll-mt-24">
+        {filtered.map((p, index) => {
+
 
           const isFlowering = p.flower_type === "Flowering";
 
@@ -350,9 +346,8 @@ useEffect(() => {
             >
               {/* Top colored bar */}
               <div
-                className={`h-1 ${
-                  isFlowering ? "bg-green-500" : "bg-blue-500"
-                }`}
+                className={`h-1 ${isFlowering ? "bg-green-500" : "bg-blue-500"
+                  }`}
               />
 
               <div className="p-5">
@@ -363,123 +358,69 @@ useEffect(() => {
                     <p className="text-sm text-green-600">{p.category}</p>
                   </div>
                   <span
-                    className={`px-3 py-1 rounded-full text-xs font-medium ${
-                      isFlowering
-                        ? "bg-green-100 text-green-700"
-                        : "bg-blue-100 text-blue-700"
-                    }`}
+                    className={`px-3 py-1 rounded-full text-xs font-medium ${isFlowering
+                      ? "bg-green-100 text-green-700"
+                      : "bg-blue-100 text-blue-700"
+                      }`}
                   >
                     {p.flower_type}
                   </span>
                 </div>
 
-                {/* Media Icons Row */}
 
-                {/* MEDIA PREVIEW */}
-<div className="flex flex-wrap gap-3 my-4">
-  {(p.images || []).map((file, i) => {
-    const isVideo = file.match(/\.(mp4|webm|mov|avi)$/i);
+                {/* Attributes Grid */}
 
-    return (
-      <div
-        key={i}
-        className="w-20 h-20 rounded-xl overflow-hidden cursor-pointer"
-        onClick={(e) => {
-          e.stopPropagation();
-          setMediaList(p.images);
-          setMediaIndex(i);
-          setMediaOpen(true);
-        }}
-      >
-        {isVideo ? (
-          <video
-            src={file}
-            className="w-full h-full object-cover"
-            muted
-          />
-        ) : (
-          <img
-            src={file}
-            className="w-full h-full object-cover"
-          />
-        )}
-      </div>
-    );
-  })}
-</div>
-               {/* Attributes Grid */}
-            
 
                 {/* Actions */}
-              
+
               </div>
             </div>
           );
         })}
       </div>
 
-      {/* PAGINATION */}
-      <div className="flex justify-center items-center gap-4 mt-8">
-        <button
-          disabled={page === 1}
-          onClick={() => setPage((p) => p - 1)}
-          className="px-4 py-2 rounded-lg border border-gray-200 bg-white disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
-        >
-          Prev
-        </button>
-        <span className="text-sm text-gray-600">
-          {page} / {totalPages}
-        </span>
-        <button
-          disabled={page === totalPages || totalPages === 0}
-          onClick={() => setPage((p) => p + 1)}
-          className="px-4 py-2 rounded-lg border border-gray-200 bg-white disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
-        >
-          Next
-        </button>
-      </div>
 
       {/* FULLSCREEN CARD MODAL */}
       {current && (
-       <div className="fixed inset-0 bg-black/90 z-50 flex items-center justify-center p-4 font-extrabold"
-        onTouchStart={handleTouchStart}
-        onTouchMove={handleTouchMove}
-        onTouchEnd={handleTouchEnd}
->
-         
+        <div className="fixed inset-0 bg-black/90 z-50 flex items-center justify-center p-4 font-extrabold"
+          onTouchStart={handleTouchStart}
+          onTouchMove={handleTouchMove}
+          onTouchEnd={handleTouchEnd}
+        >
+
           <div className="bg-white w-full max-w-4xl rounded-2xl overflow-auto max-h-[90vh]">
             <div className="p-6">
               <div className="flex justify-end items-center gap-2 mb-2">
 
-  {/* DELETE */}
-  <button
-    onClick={(e) => {
-      e.stopPropagation();
-      if (current) setDeletePlantData(current);
-    }}
-    className="p-2 rounded-lg hover:bg-red-50 transition"
-  >
-    <Trash2 className="w-5 h-5 text-red-500" />
-  </button>
+                {/* DELETE */}
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (current) setDeletePlantData(current);
+                  }}
+                  className="p-2 rounded-lg hover:bg-red-50 transition"
+                >
+                  <Trash2 className="w-5 h-5 text-red-500" />
+                </button>
 
-  {/* EDIT */}
-  <button
-    onClick={(e) => {
-      e.stopPropagation();
-      if (current) router.push(`/edit/${current.id}`);
-    }}
-    className="p-2 rounded-lg hover:bg-green-50 transition"
-  >
-    <Pencil className="w-5 h-5 text-green-600" />
-  </button>
+                {/* EDIT */}
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (current) router.push(`/edit/${current.id}`);
+                  }}
+                  className="p-2 rounded-lg hover:bg-green-50 transition"
+                >
+                  <Pencil className="w-5 h-5 text-green-600" />
+                </button>
 
-  <button
-                onClick={() => setSelectedIndex(null)}
-                className="float-right text-2xl text-gray-400 hover:text-gray-600"
-              >
-                ✕
-              </button>
-</div>
+                <button
+                  onClick={() => setSelectedIndex(null)}
+                  className="float-right text-2xl text-gray-400 hover:text-gray-600"
+                >
+                  ✕
+                </button>
+              </div>
 
               <h2 className="text-3xl font-bold text-gray-800">{current.name}</h2>
               <p className="text-green-600 mb-4">{current.category}</p>
@@ -565,7 +506,7 @@ useEffect(() => {
             </div>
           </div>
 
-     
+
         </div>
       )}
 
@@ -574,7 +515,7 @@ useEffect(() => {
         <div className="fixed inset-0 bg-black z-[60] flex items-center justify-center"
           onTouchStart={handleTouchStart}
           onTouchMove={handleTouchMove}
-            onTouchEnd={handleTouchEnd}>
+          onTouchEnd={handleTouchEnd}>
 
           <button
             onClick={() => setMediaOpen(false)}
@@ -583,16 +524,16 @@ useEffect(() => {
             ✕
           </button>
 
-          
+
 
           {mediaList[mediaIndex]?.match(/\.(mp4|webm|mov|avi)$/i) ? (
-        <div className="max-w-full max-h-full flex items-center justify-center">
-         <video
-          src={mediaList[mediaIndex]}
-          controls
-          autoPlay
-          className="max-w-full max-h-full object-contain"/>
-</div>
+            <div className="max-w-full max-h-full flex items-center justify-center">
+              <video
+                src={mediaList[mediaIndex]}
+                controls
+                autoPlay
+                className="max-w-full max-h-full object-contain" />
+            </div>
           ) : (
             <img
               src={mediaList[mediaIndex]}
@@ -600,36 +541,36 @@ useEffect(() => {
             />
           )}
 
-       
+
         </div>
       )}
       {deletePlantData && (
-  <div className="confirmOverlay">
-    <div className="confirmBox">
-      <h3>Confirmation</h3>
-      <p>Are you sure you want to delete this plant?</p>
+        <div className="confirmOverlay">
+          <div className="confirmBox">
+            <h3>Confirmation</h3>
+            <p>Are you sure you want to delete this plant?</p>
 
-      <div className="actions">
-        <button
-          className="cancel"
-          onClick={() => setDeletePlantData(null)}
-        >
-          Cancel
-        </button>
+            <div className="actions">
+              <button
+                className="cancel"
+                onClick={() => setDeletePlantData(null)}
+              >
+                Cancel
+              </button>
 
-        <button
-          className="delete"
-          onClick={async () => {
-            await deletePlant(deletePlantData);
-            setDeletePlantData(null);
-          }}
-        >
-          Delete
-        </button>
-      </div>
-    </div>
-    <style jsx>{`
-    .confirmOverlay {
+              <button
+                className="delete"
+                onClick={async () => {
+                  await deletePlant(deletePlantData);
+                  setDeletePlantData(null);
+                }}
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+          <style jsx>{`
+  .confirmOverlay {
   position: fixed;
   inset: 0;
   background: rgba(0,0,0,0.3);
@@ -683,8 +624,8 @@ useEffect(() => {
   font-weight: 600;
 } 
     `}</style>
-  </div>
-)}
+        </div>
+      )}
     </div>
   );
 }

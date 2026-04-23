@@ -17,7 +17,13 @@ const isLoginPage = pathname === "/login";
        <Link
   href={isLoginPage ? "#" : "/"}
   onClick={(e) => {
-    if (isLoginPage) e.preventDefault();
+    if (isLoginPage) {
+      e.preventDefault();
+    } else if (pathname === "/") {
+      // If already on home page, scroll to top smoothly (Navbar is at top)
+      e.preventDefault();
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
   }}
   className={`flex items-center gap-2 sm:gap-3 ${
     isLoginPage ? "cursor-default" : "cursor-pointer"
