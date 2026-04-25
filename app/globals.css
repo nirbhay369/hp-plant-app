@@ -46,3 +46,11 @@ button:hover {
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
+
+.ProseMirror p {
+  margin: 0;
+}
+.ProseMirror:focus {
+  outline: none;
+}
+

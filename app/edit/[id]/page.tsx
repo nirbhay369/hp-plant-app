@@ -5,6 +5,11 @@ import { useParams, useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { uploadImages } from "@/lib/cloudinary";
 import { deleteImage } from "@/lib/cloudinary";
+import { useEditor, EditorContent } from "@tiptap/react";
+import StarterKit from "@tiptap/starter-kit";
+import { TextStyle } from "@tiptap/extension-text-style";
+import { Color } from "@tiptap/extension-color";
+import Highlight from "@tiptap/extension-highlight";
 
 type EditPlantForm = {
   category: string;
@@ -60,7 +65,25 @@ export default function EditPlant() {
     fetchPlant();
   }, [id]);
 
+ const editor = useEditor({
+  extensions: [
+    StarterKit,
+    TextStyle,
+    Color.configure({ types: ["textStyle"] }),
+    Highlight,
+  ],
+  content: form?.uses || "", // ✅ safe
+  immediatelyRender: false,
+  onUpdate: ({ editor }) => {
+    handleChange("uses", editor.getHTML());
+  },
+});
 
+useEffect(() => {
+  if (editor && form?.uses) {
+    editor.commands.setContent(form.uses);
+  }
+}, [form?.uses, editor]);
 
 
   if (!form) return <div className="container">Loading...</div>;
@@ -196,6 +219,8 @@ export default function EditPlant() {
       setLoading(false);
     }
   };
+
+ 
 
   return (
     <div className="container">
@@ -430,13 +455,72 @@ export default function EditPlant() {
       </div>
 
       {/* USES */}
-      <div className="field">
-        <label>Description / Uses</label>
-        <textarea
-          value={form.uses}
-          onChange={(e) => handleChange("uses", e.target.value)}
-        />
+    <div className="field">
+  <label className="text-green-700 font-semibold mb-2">
+    Description / Uses
+  </label>
+
+  {editor && (
+    <div className="rounded-xl border border-green-300 bg-white shadow-sm">
+
+      {/* Toolbar */}
+      <div className="flex items-center gap-2 px-3 py-2 border-b bg-green-50">
+
+        <button
+          type="button"
+          onClick={() => editor.chain().focus().toggleBold().run()}
+          className={`px-2 py-1 text-sm rounded ${
+            editor.isActive("bold")
+              ? "bg-green-200 text-green-900"
+              : "bg-white border"
+          }`}
+        >
+          B
+        </button>
+
+        <button
+          type="button"
+          onClick={() => editor.chain().focus().toggleItalic().run()}
+          className={`px-2 py-1 text-sm rounded ${
+            editor.isActive("italic")
+              ? "bg-green-200 text-green-900"
+              : "bg-white border"
+          }`}
+        >
+          I
+        </button>
+
+        {/* Highlight toggle */}
+        <button
+          type="button"
+          onClick={() => {
+            if (editor.isActive("highlight")) {
+              editor.chain().focus().unsetHighlight().run();
+            } else {
+              editor
+                .chain()
+                .focus()
+                .toggleHighlight({ color: "#fde047" })
+                .run();
+            }
+          }}
+          className={`px-2 py-1 rounded ${
+            editor.isActive("highlight")
+              ? "bg-yellow-400 text-black"
+              : "bg-yellow-200"
+          }`}
+        >
+          🖍
+        </button>
       </div>
+
+      {/* Editor */}
+      <div className="p-3 min-h-[120px] text-sm">
+        <EditorContent editor={editor} />
+      </div>
+    </div>
+  )}
+</div>
 
 
 

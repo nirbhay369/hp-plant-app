@@ -5,6 +5,7 @@ import { supabase } from "@/lib/supabase";
 import { useRouter } from "next/navigation";
 import { usePlant } from "./context/PlantContext";
 import { Pencil, Trash2 } from "lucide-react";
+import DOMPurify from "dompurify";
 
 type Plant = {
   id: string;
@@ -301,8 +302,9 @@ export default function Home() {
              focus:outline-none focus:ring-2 focus:ring-green-500"
         >
           <option className="font-bold" value="">Select Shape</option>
+          <option className="font-bold">Single-Shape</option>
           <option className="font-bold">Multi-Shape</option>
-          <option className="font-bold">Single</option>
+          <option className="font-bold">Natural canopy</option>
         </select>
 
         <select
@@ -332,53 +334,77 @@ export default function Home() {
         </p>
       )}
       {/* CARDS - NEW DESIGN */}
-      <div id="cards-start" className="grid md:grid-cols-2 gap-6 scroll-mt-24">
-        {filtered.map((p, index) => {
+     <div id="cards-start" className="grid md:grid-cols-2 gap-6 scroll-mt-24">
+  {filtered.map((p, index) => {
 
+    return (
+      <div
+        key={p.id}
+        className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden cursor-pointer hover:shadow-md transition"
+        onClick={() => setSelectedIndex(index)} // ✅ FIXED
+      >
 
-          const isFlowering = p.flower_type === "Flowering";
+        {/* 🔥 Top colored bar (CATEGORY BASED) */}
+        <div
+          className={`h-1 ${
+            p.category.includes("Big tree")
+              ? "bg-blue-500"
+              : p.category.includes("Small tree")
+              ? "bg-green-500"
+              : p.category.includes("Palm tree")
+              ? "bg-yellow-500"
+              : p.category.includes("Flowering plant")
+              ? "bg-pink-500"
+              : p.category.includes("Indoor")
+              ? "bg-purple-500"
+              : p.category.includes("Fruit")
+              ? "bg-orange-500"
+              : p.category.includes("Medicinal")
+              ? "bg-lime-500"
+              : "bg-gray-400"
+          }`}
+        />
 
-          return (
-            <div
-              key={p.id}
-              className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden cursor-pointer hover:shadow-md transition"
-              onClick={() => setSelectedIndex(filtered.indexOf(p))}
-            >
-              {/* Top colored bar */}
-              <div
-                className={`h-1 ${isFlowering ? "bg-green-500" : "bg-blue-500"
-                  }`}
-              />
+        <div className="p-5">
 
-              <div className="p-5">
-                {/* Header with name and badge */}
-                <div className="flex justify-between items-start mb-1">
-                  <div>
-                    <h2 className="text-xl font-bold text-gray-800">{p.name}</h2>
-                    <p className="text-sm text-green-600">{p.category}</p>
-                  </div>
-                  <span
-                    className={`px-3 py-1 rounded-full text-xs font-medium ${isFlowering
-                      ? "bg-green-100 text-green-700"
-                      : "bg-blue-100 text-blue-700"
-                      }`}
-                  >
-                    {p.flower_type}
-                  </span>
-                </div>
-
-
-                {/* Attributes Grid */}
-
-
-                {/* Actions */}
-
-              </div>
+          {/* Header */}
+          <div className="flex justify-between items-start mb-1">
+            <div>
+              <h2 className="text-xl font-bold text-gray-800">{p.name}</h2>
+              <p className="text-sm text-green-600">
+                {p.category.split("(")[0]}
+              </p>
             </div>
-          );
-        })}
-      </div>
 
+            {/* 🔥 CATEGORY BADGE */}
+            <span
+              className={`px-3 py-1 rounded-full text-xs font-medium border ${
+                p.category.includes("Big tree")
+                  ? "bg-blue-100 text-blue-700 border-blue-400"
+                  : p.category.includes("Small tree")
+                  ? "bg-green-100 text-green-700 border-green-400"
+                  : p.category.includes("Palm tree")
+                  ? "bg-yellow-100 text-yellow-700 border-yellow-400"
+                  : p.category.includes("Flowering plant")
+                  ? "bg-pink-100 text-pink-700 border-pink-400"
+                  : p.category.includes("Indoor")
+                  ? "bg-purple-100 text-purple-700 border-purple-400"
+                  : p.category.includes("Fruit")
+                  ? "bg-orange-100 text-orange-700 border-orange-400"
+                  : p.category.includes("Medicinal")
+                  ? "bg-lime-100 text-lime-700 border-lime-400"
+                  : "bg-gray-100 text-gray-700 border-gray-300"
+              }`}
+            >
+              {p.category.split("(")[0]}
+            </span>
+          </div>
+
+        </div>
+      </div>
+    );
+  })}
+</div>
 
       {/* FULLSCREEN CARD MODAL */}
       {current && (
@@ -501,7 +527,9 @@ export default function Home() {
               {/* Uses */}
               <div className="bg-green-50 p-4 rounded-xl mt-4">
                 <p className="text-gray-400 text-xs uppercase mb-1">Uses</p>
-                <p className="text-gray-800">{current.uses}</p>
+                <div dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(current.uses),
+  }}
+/>
               </div>
             </div>
           </div>
@@ -569,6 +597,7 @@ export default function Home() {
               </button>
             </div>
           </div>
+
           <style jsx>{`
   .confirmOverlay {
   position: fixed;
