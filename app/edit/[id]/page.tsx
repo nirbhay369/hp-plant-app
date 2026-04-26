@@ -65,14 +65,14 @@ export default function EditPlant() {
     fetchPlant();
   }, [id]);
 
- const editor = useEditor({
+const editor = useEditor({
   extensions: [
     StarterKit,
     TextStyle,
     Color.configure({ types: ["textStyle"] }),
     Highlight,
   ],
-  content: form?.uses || "", // ✅ safe
+  content: "", // ✅ ONLY empty
   immediatelyRender: false,
   onUpdate: ({ editor }) => {
     handleChange("uses", editor.getHTML());
@@ -80,10 +80,10 @@ export default function EditPlant() {
 });
 
 useEffect(() => {
-  if (editor && form?.uses) {
+  if (editor && form?.uses && !editor.isFocused) {
     editor.commands.setContent(form.uses);
   }
-}, [form?.uses, editor]);
+}, [editor, form?.uses]);
 
 
   if (!form) return <div className="container">Loading...</div>;

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { uploadImages } from "@/lib/cloudinary";
@@ -185,14 +185,20 @@ const editor = useEditor({
     StarterKit,
     TextStyle,
     Color.configure({ types: ["textStyle"] }),
-     Highlight,
-  ],  
-  content: form.uses,
-  immediatelyRender: false, // ✅ FIX
+    Highlight,
+  ],
+  content: "", // ✅ ONLY empty
+  immediatelyRender: false,
   onUpdate: ({ editor }) => {
     handleChange("uses", editor.getHTML());
   },
 });
+
+useEffect(() => {
+  if (editor && form?.uses && !editor.isFocused) {
+    editor.commands.setContent(form.uses);
+  }
+}, [editor, form?.uses]);
 
   return (
     <div className="container">
