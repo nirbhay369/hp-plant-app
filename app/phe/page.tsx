@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { useRouter } from "next/navigation";
-import { deletePheImage,deletePheFolder } from "@/lib/cloudinary";
+import { deletePheFolder } from "@/lib/cloudinary";
 
 type Item = {
   id: string;
@@ -25,8 +25,7 @@ export default function PhePage() {
 
   const [deleteItem, setDeleteItem] = useState<Item | null>(null);
   const [deleting, setDeleting] = useState(false);
-  const [currentPage, setCurrentPage] = useState(1);
-const itemsPerPage = 6;
+  const [categoryFilter, setCategoryFilter] = useState("");
 
 
   useEffect(() => {
@@ -43,176 +42,122 @@ const itemsPerPage = 6;
     else setItems(data || []);
   };
 
-let isDeleting = false;
+  const filteredItems = items.filter((item) => {
+    if (!categoryFilter) return true;
+    return item.category === categoryFilter;
+  });
 
-const deleteData = async (item: Item) => {
-  if (!item) return;
+  let isDeleting = false;
 
-  if (isDeleting) return; // ❌ prevent duplicate call
-  isDeleting = true;
+  const deleteData = async (item: Item) => {
+    if (!item) return;
 
-  try {
-    await deletePheFolder(item.name);
+    if (isDeleting) return; // ❌ prevent duplicate call
+    isDeleting = true;
 
-    await supabase.from("phe").delete().eq("id", item.id);
+    try {
+      await deletePheFolder(item.name);
 
-    fetchItems();
-  } catch (err) {
-    console.log(err);
-    alert("Delete failed ❌");
-  } finally {
-    isDeleting = false; // 🔥 reset
-  }
-};
+      await supabase.from("phe").delete().eq("id", item.id);
 
-const startIndex = (currentPage - 1) * itemsPerPage;
-
-const paginatedData = items.slice(
-  startIndex,
-  startIndex + itemsPerPage
-);
-
-const totalPages = Math.ceil(items.length / itemsPerPage);
+      fetchItems();
+    } catch (err) {
+      console.log(err);
+      alert("Delete failed ❌");
+    } finally {
+      isDeleting = false; // 🔥 reset
+    }
+  };
 
 
-  const current = selectedIndex !== null ? items[selectedIndex] : null;
+  const current = selectedIndex !== null ? filteredItems[selectedIndex] : null;
 
   const next = () => {
     if (selectedIndex === null) return;
     setSelectedIndex(
-      selectedIndex === items.length - 1 ? 0 : selectedIndex + 1
+      selectedIndex === filteredItems.length - 1 ? 0 : selectedIndex + 1
     );
   };
 
   const prev = () => {
     if (selectedIndex === null) return;
     setSelectedIndex(
-      selectedIndex === 0 ? items.length - 1 : selectedIndex - 1
+      selectedIndex === 0 ? filteredItems.length - 1 : selectedIndex - 1
     );
   };
 
   return (
-    <div className="w-full flex-grow flex flex-col bg-gray-50 text-bold">
-      <p className="text-sm text-gray-500 mb-4">
-        SHOWING {items.length} ITEMS
-      </p>
+    <div className="w-full flex-grow flex flex-col bg-gray-50 text-bold p-4 max-w-6xl mx-auto">
+      <div className="flex flex-row items-center gap-4 mb-6">
+        <select
+          value={categoryFilter}
+          onChange={(e) => {
+            setCategoryFilter(e.target.value);
+          }}
+          className="w-auto px-4 py-2 border border-gray-300 rounded-lg bg-white text-green-700 font-bold focus:outline-none focus:ring-2 focus:ring-green-500"
+        >
+          <option value="">All Categories</option>
+          <option>Equipments and Tools</option>
+          <option>Water Irrigation</option>
+          <option>Fertilizer</option>
+          <option>Pesticides</option>
+          <option>Planning (Our)</option>
+          <option>Planning (Guruhari)</option>
+          <option>Others</option>
+        </select>
+
+        <p className="text-sm text-gray-500 ml-auto">
+          SHOWING {filteredItems.length} ITEMS
+        </p>
+      </div>
 
       {/* CARDS */}
-     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 font-bold " >
-  {paginatedData.map((item, index) => (
-    <div
-      key={item.id}
-      className="relative bg-white rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition cursor-pointer"
-      onClick={() => setSelectedIndex(index)}
-    >
-      <div className="h-1 bg-green-500" />
+      <div className="grid md:grid-cols-2 gap-6 font-bold" >
+        {filteredItems.map((item, index) => {
+          // Dynamic color based on category
+          const getCategoryColor = (cat: string) => {
+            if (cat.includes("Equipments")) return "bg-blue-500 border-blue-400 text-blue-700 bg-blue-100";
+            if (cat.includes("Water")) return "bg-cyan-500 border-cyan-400 text-cyan-700 bg-cyan-100";
+            if (cat.includes("Fertilizer")) return "bg-green-500 border-green-400 text-green-700 bg-green-100";
+            if (cat.includes("Pesticides")) return "bg-red-500 border-red-400 text-red-700 bg-red-100";
+            if (cat.includes("Planning")) return "bg-purple-500 border-purple-400 text-purple-700 bg-purple-100";
+            return "bg-gray-500 border-gray-400 text-gray-700 bg-gray-100";
+          };
 
-      {/* ✅ CATEGORY TOP RIGHT */}
-      <div className="absolute top-3 right-4 text-xs bg-green-100 text-green-700 px-3 py-1 rounded-full">
-        {item.category}
-      </div>
+          const colors = getCategoryColor(item.category);
+          const topBarColor = colors.split(" ")[0];
+          const badgeColors = colors.split(" ").slice(1).join(" ");
 
-      <div className="p-6">
-        {/* HEADER */}
-        <div className="flex flex-col">
-          <h2 className="text-2xl font-bold">{item.name}</h2>
+          return (
+            <div
+              key={item.id}
+              className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden cursor-pointer hover:shadow-md transition"
+              onClick={() => setSelectedIndex(index)}
+            >
+              {/* 🔥 Top colored bar */}
+              <div className={`h-1 ${topBarColor}`} />
 
-          {/* ✅ CATEGORY BELOW NAME */}
-          <p className="text-green-600 text-sm mt-1">
-            {item.category}
-          </p>
-        </div>
+              <div className="p-5">
+                {/* Header */}
+                <div className="flex justify-between items-start mb-1">
+                  <div>
+                    <h2 className="text-xl font-bold text-gray-800">{item.name}</h2>
+                    <p className="text-sm text-green-600">
+                      {item.category}
+                    </p>
+                  </div>
 
-        {/* MEDIA */}
-        <div className="flex gap-4 flex-wrap my-4">
-          {(item.media || []).map((file, i) => {
-            const isVideo = file.match(/\.(mp4|webm|mov|avi)$/i);
-
-
-            return (
-              <div
-                key={i}
-                className="w-24 h-24 rounded-xl overflow-hidden"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setMediaList(item.media);
-                  setMediaIndex(i);
-                  setMediaOpen(true);
-                }}
-              >
-                {isVideo ? (
-                  <video
-                    src={file}
-                    className="w-full h-full object-cover"
-                    muted
-                  />
-                ) : (
-                  <img
-                    src={file}
-                    className="w-full h-full object-cover"
-                  />
-                )}
+                  {/* 🔥 CATEGORY BADGE */}
+                  <span className={`px-3 py-1 rounded-full text-xs font-medium border ${badgeColors}`}>
+                    {item.category}
+                  </span>
+                </div>
               </div>
-            );
-          })}
-        </div>
-
-        {/* DESCRIPTION */}
-        <div className="bg-green-50 p-3 rounded-xl text-lg">
-          {item.description || "No description"}
-        </div>
-
-        {/* ACTIONS */}
-        <div className="flex gap-4 mt-4 pt-4 border-t">
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              router.push(`/phe/edit/${item.id}`);
-            }}
-            className="text-green-700 text-sm"
-          >
-            Edit
-          </button>
-
-          <button   
-          
-            onClick={(e) => {
-              e.stopPropagation();
-              setDeleteItem(item);
-            }}
-            className="text-red-600 text-sm"
-          >
-            Delete
-          </button>
-        </div>
+            </div>
+          );
+        })}
       </div>
-    </div>
-  ))}
-</div>
- 
 
-{/* ✅ PAGINATION YAHAN DAAL */}
-<div className="flex justify-center gap-4 mt-10">
-  <button
-    disabled={currentPage === 1}
-    onClick={() => setCurrentPage((p) => p - 1)}
-    className="px-4 py-2 border rounded disabled:opacity-50"
-  >
-    Prev
-  </button>
-
-  <span className="px-4 py-2">
-    {currentPage} / {totalPages}
-  </span>
-
-  <button
-    disabled={currentPage === totalPages}
-    onClick={() => setCurrentPage((p) => p + 1)}
-    className="px-4 py-2 border rounded disabled:opacity-50"
-  >
-    Next
-  </button>
-</div>
 
       {/* FULL SCREEN DETAIL */}
       {current && (
@@ -326,57 +271,57 @@ const totalPages = Math.ceil(items.length / itemsPerPage);
       )}
 
       {/* DELETE CONFIRM */}
-{deleteItem && (
-  <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50">
-    
-    <div className="bg-white rounded-2xl w-[300px] text-center shadow-xl overflow-hidden">
-      
-      {/* TITLE */}
-      <h3 className="text-lg font-semibold text-green-800 mt-5">
-        Confirmation
-      </h3>
+      {deleteItem && (
+        <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50">
 
-      {/* MESSAGE */}
-      <p className="text-gray-600 text-sm px-6 py-4">
-        Are you sure you want to delete this item?
-      </p>
+          <div className="bg-white rounded-2xl w-[300px] text-center shadow-xl overflow-hidden">
 
-      {/* DIVIDER */}
-      <div className="border-t" />
+            {/* TITLE */}
+            <h3 className="text-lg font-semibold text-green-800 mt-5">
+              Confirmation
+            </h3>
 
-      {/* ACTIONS */}
-      <div className="flex">
-        <button
-          onClick={() => setDeleteItem(null)}
-          className="flex-1 py-3 text-blue-600 font-medium border-r"
-        >
-          Cancel
-        </button>
+            {/* MESSAGE */}
+            <p className="text-gray-600 text-sm px-6 py-4">
+              Are you sure you want to delete this item?
+            </p>
 
-      <button
-  disabled={deleting}
-  className="flex-1 py-3 text-red-500 font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
-  onClick={async () => {
-    if (deleting) return; // 🔥 prevent double click
+            {/* DIVIDER */}
+            <div className="border-t" />
 
-    setDeleting(true);
+            {/* ACTIONS */}
+            <div className="flex">
+              <button
+                onClick={() => setDeleteItem(null)}
+                className="flex-1 py-3 text-blue-600 font-medium border-r"
+              >
+                Cancel
+              </button>
 
-    try {
-      await deleteData(deleteItem);
-      setDeleteItem(null);
-    } catch (e) {
-      console.log(e);
-    } finally {
-      setDeleting(false); // 🔥 VERY IMPORTANT
-    }
-  }}
->
-  {deleting ? "Deleting..." : "Delete"}
-</button>
-      </div>
-    </div>
-  </div>
-)}
+              <button
+                disabled={deleting}
+                className="flex-1 py-3 text-red-500 font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
+                onClick={async () => {
+                  if (deleting) return; // 🔥 prevent double click
+
+                  setDeleting(true);
+
+                  try {
+                    await deleteData(deleteItem);
+                    setDeleteItem(null);
+                  } catch (e) {
+                    console.log(e);
+                  } finally {
+                    setDeleting(false); // 🔥 VERY IMPORTANT
+                  }
+                }}
+              >
+                {deleting ? "Deleting..." : "Delete"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

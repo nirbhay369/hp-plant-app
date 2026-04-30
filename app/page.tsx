@@ -237,7 +237,7 @@ export default function Home() {
           className="w-full min-w-0 px-3 py-2 border border-gray-300 rounded-lg 
                   bg-white text-green-700 text-l font-bold
                     focus:outline-none focus:ring-2 focus:ring-green-500">
-          <option className="font-bold" value="">Select Category</option>
+          <option className="font-bold" value="">Select Categories</option>
           <option className="font-bold">Big tree ( મોટા ઝાડ )</option>
           <option className="font-bold">Small tree ( નાના ઝાડ )</option>
           <option className="font-bold">Palm tree ( પામ )</option>
@@ -246,7 +246,7 @@ export default function Home() {
           <option className="font-bold">Semi shade plant ( છાયા વાળા છોડ )</option>
           <option className="font-bold">Shape / cutting plant ( આકાર વાળા છોડ )</option>
           <option className="font-bold">Dwarf plants ( ડ્રાફ્ટ છોડ )</option>
-          <option className="font-bold">Underground plant ( ગાંઠો )</option>
+          <option className="font-bold">Underground plant ( ગાંઠો  )</option>
           <option className="font-bold">Ground cover plant ( પથરાતા છોડ )</option>
           <option className="font-bold">lawn ( લોન )</option>
           <option className="font-bold">Creeper ( વેલ )</option>
@@ -254,7 +254,12 @@ export default function Home() {
           <option className="font-bold">Indoor plant</option>
           <option className="font-bold">Seasonal plant</option>
           <option className="font-bold">Medicinal plant ( આર્યુવેદિક વનસ્પતિ )</option>
-          <option className="font-bold">Fruit plant ( ફળ ના ઝાડ )</option>
+          <option className="font-bold">Fruit plant  ( ફળ ના ઝાડ )</option>
+          <option className="font-bold">Miyavaki van (મિયાવાકી વન)</option>
+          <option className="font-bold">Extra 1  ( વધારા ના 1 )</option>
+          <option className="font-bold">Extra 2  ( વધારા ના 2 )</option>
+          <option className="font-bold">Extra 3  ( વધારા ના 3 )</option>
+
         </select>
 
         <select
@@ -334,77 +339,72 @@ export default function Home() {
         </p>
       )}
       {/* CARDS - NEW DESIGN */}
-     <div id="cards-start" className="grid md:grid-cols-2 gap-6 scroll-mt-24">
-  {filtered.map((p, index) => {
+      <div id="cards-start" className="grid md:grid-cols-2 gap-6 scroll-mt-24">
+        {filtered.map((p, index) => {
 
-    return (
-      <div
-        key={p.id}
-        className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden cursor-pointer hover:shadow-md transition"
-        onClick={() => setSelectedIndex(index)} // ✅ FIXED
-      >
-
-        {/* 🔥 Top colored bar (CATEGORY BASED) */}
-        <div
-          className={`h-1 ${
-            p.category.includes("Big tree")
-              ? "bg-blue-500"
-              : p.category.includes("Small tree")
-              ? "bg-green-500"
-              : p.category.includes("Palm tree")
-              ? "bg-yellow-500"
-              : p.category.includes("Flowering plant")
-              ? "bg-pink-500"
-              : p.category.includes("Indoor")
-              ? "bg-purple-500"
-              : p.category.includes("Fruit")
-              ? "bg-orange-500"
-              : p.category.includes("Medicinal")
-              ? "bg-lime-500"
-              : "bg-gray-400"
-          }`}
-        />
-
-        <div className="p-5">
-
-          {/* Header */}
-          <div className="flex justify-between items-start mb-1">
-            <div>
-              <h2 className="text-xl font-bold text-gray-800">{p.name}</h2>
-              <p className="text-sm text-green-600">
-                {p.category.split("(")[0]}
-              </p>
-            </div>
-
-            {/* 🔥 CATEGORY BADGE */}
-            <span
-              className={`px-3 py-1 rounded-full text-xs font-medium border ${
-                p.category.includes("Big tree")
-                  ? "bg-blue-100 text-blue-700 border-blue-400"
-                  : p.category.includes("Small tree")
-                  ? "bg-green-100 text-green-700 border-green-400"
-                  : p.category.includes("Palm tree")
-                  ? "bg-yellow-100 text-yellow-700 border-yellow-400"
-                  : p.category.includes("Flowering plant")
-                  ? "bg-pink-100 text-pink-700 border-pink-400"
-                  : p.category.includes("Indoor")
-                  ? "bg-purple-100 text-purple-700 border-purple-400"
-                  : p.category.includes("Fruit")
-                  ? "bg-orange-100 text-orange-700 border-orange-400"
-                  : p.category.includes("Medicinal")
-                  ? "bg-lime-100 text-lime-700 border-lime-400"
-                  : "bg-gray-100 text-gray-700 border-gray-300"
-              }`}
+          return (
+            <div
+              key={p.id}
+              className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden cursor-pointer hover:shadow-md transition"
+              onClick={() => setSelectedIndex(index)} // ✅ FIXED
             >
-              {p.category.split("(")[0]}
-            </span>
-          </div>
 
-        </div>
+              {/* 🔥 Top colored bar (CATEGORY BASED) */}
+              <div
+                className={`h-1 ${p.category.includes("Big tree")
+                  ? "bg-blue-500"
+                  : p.category.includes("Small tree")
+                    ? "bg-green-500"
+                    : p.category.includes("Palm tree")
+                      ? "bg-yellow-500"
+                      : p.category.includes("Flowering plant")
+                        ? "bg-pink-500"
+                        : p.category.includes("Indoor")
+                          ? "bg-purple-500"
+                          : p.category.includes("Fruit")
+                            ? "bg-orange-500"
+                            : p.category.includes("Medicinal")
+                              ? "bg-lime-500"
+                              : "bg-gray-400"
+                  }`}
+              />
+
+              <div className="p-5">
+
+                {/* Header */}
+                <div className="flex justify-between items-start mb-1">
+                  <div>
+                    <h2 className="text-xl font-bold text-gray-800">{p.name}</h2>
+                  </div>
+
+                  {/* 🔥 CATEGORY BADGE */}
+                  <span
+                    className={`px-3 py-1 rounded-full text-xs font-medium border ${p.category.includes("Big tree")
+                      ? "bg-blue-100 text-blue-700 border-blue-400"
+                      : p.category.includes("Small tree")
+                        ? "bg-green-100 text-green-700 border-green-400"
+                        : p.category.includes("Palm tree")
+                          ? "bg-yellow-100 text-yellow-700 border-yellow-400"
+                          : p.category.includes("Flowering plant")
+                            ? "bg-pink-100 text-pink-700 border-pink-400"
+                            : p.category.includes("Indoor")
+                              ? "bg-purple-100 text-purple-700 border-purple-400"
+                              : p.category.includes("Fruit")
+                                ? "bg-orange-100 text-orange-700 border-orange-400"
+                                : p.category.includes("Medicinal")
+                                  ? "bg-lime-100 text-lime-700 border-lime-400"
+                                  : "bg-gray-100 text-gray-700 border-gray-300"
+                      }`}
+                  >
+                    {p.category.split("(")[0]}
+                  </span>
+                </div>
+
+              </div>
+            </div>
+          );
+        })}
       </div>
-    );
-  })}
-</div>
 
       {/* FULLSCREEN CARD MODAL */}
       {current && (
@@ -527,9 +527,10 @@ export default function Home() {
               {/* Uses */}
               <div className="bg-green-50 p-4 rounded-xl mt-4">
                 <p className="text-gray-400 text-xs uppercase mb-1">Uses</p>
-                <div dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(current.uses),
-  }}
-/>
+                <div dangerouslySetInnerHTML={{
+                  __html: DOMPurify.sanitize(current.uses),
+                }}
+                />
               </div>
             </div>
           </div>

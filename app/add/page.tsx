@@ -180,25 +180,25 @@ export default function AddPlant() {
     }
   };
 
-const editor = useEditor({
-  extensions: [
-    StarterKit,
-    TextStyle,
-    Color.configure({ types: ["textStyle"] }),
-    Highlight,
-  ],
-  content: "", // ✅ ONLY empty
-  immediatelyRender: false,
-  onUpdate: ({ editor }) => {
-    handleChange("uses", editor.getHTML());
-  },
-});
+  const editor = useEditor({
+    extensions: [
+      StarterKit,
+      TextStyle,
+      Color.configure({ types: ["textStyle"] }),
+      Highlight,
+    ],
+    content: "", // ✅ ONLY empty
+    immediatelyRender: false,
+    onUpdate: ({ editor }) => {
+      handleChange("uses", editor.getHTML());
+    },
+  });
 
-useEffect(() => {
-  if (editor && form?.uses && !editor.isFocused) {
-    editor.commands.setContent(form.uses);
-  }
-}, [editor, form?.uses]);
+  useEffect(() => {
+    if (editor && form?.uses && !editor.isFocused) {
+      editor.commands.setContent(form.uses);
+    }
+  }, [editor, form?.uses]);
 
   return (
     <div className="container">
@@ -213,7 +213,6 @@ useEffect(() => {
             className="p-2 border rounded-xl"
           >
             <option value="">All Category</option>
-
             <option>Big tree ( મોટા ઝાડ )</option>
             <option>Small tree ( નાના ઝાડ )</option>
             <option>Palm tree ( પામ )</option>
@@ -231,8 +230,11 @@ useEffect(() => {
             <option>Seasonal plant</option>
             <option>Medicinal plant ( આર્યુવેદિક વનસ્પતિ )</option>
             <option>Fruit plant  ( ફળ ના ઝાડ )</option>
+            <option>Miyavaki van (મિયાવાકી વન)</option>
             <option>Extra 1  ( વધારા ના 1 )</option>
             <option>Extra 2  ( વધારા ના 2 )</option>
+            <option>Extra 3  ( વધારા ના 3 )</option>
+
           </select>
         </div>
 
@@ -439,78 +441,75 @@ useEffect(() => {
         </div>
 
         {/* Purpose */}
- <div className="field">
-  <label className="text-green-700 font-semibold mb-2">
-    Description / Uses
-  </label>
+        <div className="field">
+          <label className="text-green-700 font-semibold mb-2">
+            Description / Uses
+          </label>
 
-  {editor && (
-    <div className="rounded-xl border border-green-300 bg-white shadow-sm">
+          {editor && (
+            <div className="rounded-xl border border-green-300 bg-white shadow-sm">
 
-      {/* 🔥 Toolbar */}
-      <div className="flex items-center gap-2 px-3 py-2 border-b bg-green-50">
+              {/* 🔥 Toolbar */}
+              <div className="flex items-center gap-2 px-3 py-2 border-b bg-green-50">
 
-        {/* Text buttons */}
-        <button
-          type="button"
-          onClick={() => editor.chain().focus().toggleBold().run()}
-          className={`px-2 py-1 text-sm rounded ${
-            editor.isActive("bold")
-              ? "bg-green-200 text-green-900"
-              : "bg-white border"
-          }`}
-        >
-          B
-        </button>
+                {/* Text buttons */}
+                <button
+                  type="button"
+                  onClick={() => editor.chain().focus().toggleBold().run()}
+                  className={`px-2 py-1 text-sm rounded ${editor.isActive("bold")
+                    ? "bg-green-200 text-green-900"
+                    : "bg-white border"
+                    }`}
+                >
+                  B
+                </button>
 
-        <button
-          type="button"
-          onClick={() => editor.chain().focus().toggleItalic().run()}
-          className={`px-2 py-1 text-sm rounded ${
-            editor.isActive("italic")
-              ? "bg-green-200 text-green-900"
-              : "bg-white border"
-          }`}
-        >
-          I
-        </button>
+                <button
+                  type="button"
+                  onClick={() => editor.chain().focus().toggleItalic().run()}
+                  className={`px-2 py-1 text-sm rounded ${editor.isActive("italic")
+                    ? "bg-green-200 text-green-900"
+                    : "bg-white border"
+                    }`}
+                >
+                  I
+                </button>
 
-<button
-  type="button"
-  onClick={() => {
-    if (editor.isActive("highlight")) {
-      editor.chain().focus().unsetHighlight().run(); // 🔴 remove
-    } else {
-      editor
-        .chain()
-        .focus()
-        .toggleHighlight({ color: "#fde047" }) // 🟡 apply
-        .run();
-    }
-  }}
-  className={`px-2 py-1 rounded ${
-    editor.isActive("highlight")
-      ? "bg-yellow-400 text-green-900"
-      : "bg-yellow-200"
-  }`}
->
-  🖍
-</button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (editor.isActive("highlight")) {
+                      editor.chain().focus().unsetHighlight().run(); // 🔴 remove
+                    } else {
+                      editor
+                        .chain()
+                        .focus()
+                        .toggleHighlight({ color: "#fde047" }) // 🟡 apply
+                        .run();
+                    }
+                  }}
+                  className={`px-2 py-1 rounded ${editor.isActive("highlight")
+                    ? "bg-yellow-400 text-green-900"
+                    : "bg-yellow-200"
+                    }`}
+                >
+                  🖍
+                </button>
 
-        {/* Divider */}
-        <div className="w-px h-5 bg-gray-300 mx-1" />
+                {/* Divider */}
+                <div className="w-px h-5 bg-gray-300 mx-1" />
 
-        
+
+              </div>
+
+              {/* ✏️ Editor */}
+              <div className="p-3 min-h-[120px] text-sm">
+                <EditorContent editor={editor} />
+              </div>
+            </div>
+          )}
+        </div>
       </div>
-
-      {/* ✏️ Editor */}
-      <div className="p-3 min-h-[120px] text-sm">
-        <EditorContent editor={editor} />
-      </div>
-    </div>
-  )}
-</div>
-</div>
 
       <button onClick={handleSubmit} disabled={loading} className="submit">
         {loading ? "Saving..." : "🌿 Save Plant"}

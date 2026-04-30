@@ -12,29 +12,28 @@ const isLoginPage = pathname === "/login";
   return (
     <>
       <div className="w-full bg-white shadow-sm sticky top-0 z-50 border-b">
-  <div className="max-w-[1200px] mx-auto px-4 py-3 flex justify-between items-center w-full">
+        <div className="max-w-[1200px] mx-auto px-4 py-2 sm:py-3 flex flex-col sm:flex-row justify-between items-center w-full gap-1 sm:gap-0">
           {/* Logo */}
-       <Link
-  href={isLoginPage ? "#" : "/"}
-  onClick={(e) => {
-    if (isLoginPage) {
-      e.preventDefault();
-    } else if (pathname === "/") {
-      // If already on home page, scroll to top smoothly (Navbar is at top)
-      e.preventDefault();
-      window.scrollTo({ top: 0, behavior: "smooth" });
-    }
-  }}
-  className={`flex items-center gap-2 sm:gap-3 ${
-    isLoginPage ? "cursor-default" : "cursor-pointer"
-  }`}
->
+          <Link
+            href={isLoginPage ? "#" : "/"}
+            onClick={(e) => {
+              if (isLoginPage) {
+                e.preventDefault();
+              } else if (pathname === "/") {
+                e.preventDefault();
+                window.scrollTo({ top: 0, behavior: "smooth" });
+              }
+            }}
+            className={`flex items-center gap-2 sm:gap-3 ${
+              isLoginPage ? "cursor-default" : "cursor-pointer"
+            }`}
+          >
             {/* LOGO */}
             <img
               src="/logos.png"
               alt="logo"
               onClick={(e) => {
-                e.preventDefault(); // stop navigation
+                e.preventDefault();
                 setOpenLogo(true);
               }}
               className="h-14 sm:h-20 w-auto object-contain cursor-pointer"
@@ -42,12 +41,12 @@ const isLoginPage = pathname === "/login";
 
             {/* TEXT */}
             <span className="text-lg sm:text-xl font-semibold text-gray-800 whitespace-nowrap">
-           HariAkshar Farm
+              HariAkshar Farm
             </span>
           </Link>
 
           {/* Right text */}
-         <div className="text-xs sm:text-sm font-medium text-gray-700 tracking-wide border-l border-gray-200 pl-2 sm:pl-4">
+          <div className="text-[11px] sm:text-sm font-medium text-gray-700 tracking-wide sm:border-l border-gray-200 pl-0 sm:pl-4 text-center sm:text-left mt-1 sm:mt-0">
             <b>H</b>ariprabodham <b>D</b>ham
           </div>
 

@@ -40,18 +40,51 @@ export default function EditPhe() {
     setForm((prev: any) => ({ ...prev, [key]: value }));
   };
 
-  const handleFileChange = (files: FileList | null) => {
-    if (!files) return;
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+
+    const heic2any = (await import("heic2any")).default;
 
     const arr = Array.from(files);
-    const urls = arr.map((file) => URL.createObjectURL(file));
+    let processedFiles: File[] = [];
+
+    for (const file of arr) {
+      if (file.type === "image/heic" || file.name.toLowerCase().endsWith(".heic")) {
+        try {
+          const convertedBlob = await heic2any({
+            blob: file,
+            toType: "image/jpeg",
+            quality: 0.8,
+          });
+          const blob = Array.isArray(convertedBlob) ? convertedBlob[0] : convertedBlob;
+
+          const convertedFile = new File(
+            [blob],
+            file.name.replace(/\.heic$/i, ".jpg"),
+            { type: "image/jpeg" }
+          );
+
+          processedFiles.push(convertedFile);
+        } catch (err) {
+          console.error("HEIC convert error:", err);
+          processedFiles.push(file);
+        }
+      } else {
+        processedFiles.push(file);
+      }
+    }
+
+    const urls = processedFiles.map((file) => URL.createObjectURL(file));
 
     setPreview((prev) => [...prev, ...urls]);
 
     setForm((prev: any) => ({
       ...prev,
-      newFiles: [...(prev.newFiles || []), ...arr],
+      newFiles: [...(prev.newFiles || []), ...processedFiles],
     }));
+
+    e.target.value = "";
   };
 
   const removeFile = async (index: number) => {
@@ -99,6 +132,36 @@ export default function EditPhe() {
     try {
       let mediaUrls = form.media || [];
 
+      // ✅ RENAME FOLDER LOGIC (SAME AS EDIT PLANT)
+      const oldName =
+        mediaUrls.length > 0 && mediaUrls[0].includes("phe/")
+          ? decodeURIComponent(mediaUrls[0].split("phe/")[1].split("/")[0])
+          : null;
+
+      const newFolder = `phe/${form.name}`;
+
+      if (oldName && oldName !== form.name && mediaUrls.length > 0) {
+        console.log("✅ Rename triggered! Moving from", oldName, "→", newFolder);
+        const res = await fetch("/api/editImg", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            urls: mediaUrls,
+            newFolder,
+          }),
+        });
+
+        const data = await res.json();
+        if (data.success) {
+          mediaUrls = data.urls;
+        } else {
+          console.error("❌ Rename failed:", data.error);
+          alert("⚠️ Cloudinary rename failed: " + (data.error || "unknown error"));
+        }
+      }
+
       if (form.newFiles?.length) {
         const uploaded = await uploadPheImages(form.newFiles, form.name);
         mediaUrls = [...mediaUrls, ...uploaded];
@@ -130,7 +193,7 @@ export default function EditPhe() {
       <div className="max-w-3xl mx-auto bg-white p-4 sm:p-8 rounded-2xl shadow-lg border border-gray-200 w-full">
 
         <h1 className="text-2xl font-bold text-green-700 mb-6">
-          🛠 Edit PHE Item
+          🛠 EDIT TUHI
         </h1>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -168,8 +231,9 @@ export default function EditPhe() {
             <input
               type="file"
               multiple
+              accept="image/*,image/heic,video/*"
               hidden
-              onChange={(e) => handleFileChange(e.target.files)}
+              onChange={handleFileChange}
             />
           </label>
 

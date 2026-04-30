@@ -65,25 +65,25 @@ export default function EditPlant() {
     fetchPlant();
   }, [id]);
 
-const editor = useEditor({
-  extensions: [
-    StarterKit,
-    TextStyle,
-    Color.configure({ types: ["textStyle"] }),
-    Highlight,
-  ],
-  content: "", // ✅ ONLY empty
-  immediatelyRender: false,
-  onUpdate: ({ editor }) => {
-    handleChange("uses", editor.getHTML());
-  },
-});
+  const editor = useEditor({
+    extensions: [
+      StarterKit,
+      TextStyle,
+      Color.configure({ types: ["textStyle"] }),
+      Highlight,
+    ],
+    content: "", // ✅ ONLY empty
+    immediatelyRender: false,
+    onUpdate: ({ editor }) => {
+      handleChange("uses", editor.getHTML());
+    },
+  });
 
-useEffect(() => {
-  if (editor && form?.uses && !editor.isFocused) {
-    editor.commands.setContent(form.uses);
-  }
-}, [editor, form?.uses]);
+  useEffect(() => {
+    if (editor && form?.uses && !editor.isFocused) {
+      editor.commands.setContent(form.uses);
+    }
+  }, [editor, form?.uses]);
 
 
   if (!form) return <div className="container">Loading...</div>;
@@ -95,22 +95,54 @@ useEffect(() => {
     setForm((prev) => (prev ? { ...prev, [key]: value } : prev));
   };
 
-  const handleImageChange = (files: FileList | null) => {
-    if (!files) return;
+  const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+
+    const heic2any = (await import("heic2any")).default;
 
     const arr = Array.from(files);
-    const urls = arr.map((file) => URL.createObjectURL(file));
+    let processedFiles: File[] = [];
 
+    for (const file of arr) {
+      if (file.type === "image/heic" || file.name.toLowerCase().endsWith(".heic")) {
+        try {
+          const convertedBlob = await heic2any({
+            blob: file,
+            toType: "image/jpeg",
+            quality: 0.8,
+          });
+          const blob = Array.isArray(convertedBlob) ? convertedBlob[0] : convertedBlob;
+
+          const convertedFile = new File(
+            [blob],
+            file.name.replace(/\.heic$/i, ".jpg"),
+            { type: "image/jpeg" }
+          );
+
+          processedFiles.push(convertedFile);
+        } catch (err) {
+          console.error("HEIC convert error:", err);
+          processedFiles.push(file);
+        }
+      } else {
+        processedFiles.push(file);
+      }
+    }
+
+    const urls = processedFiles.map((file) => URL.createObjectURL(file));
     setPreview((prev) => [...prev, ...urls]);
 
     setForm((prev) =>
       prev
         ? {
           ...prev,
-          newImages: [...(prev.newImages || []), ...arr],
+          newImages: [...(prev.newImages || []), ...processedFiles],
         }
         : prev
     );
+
+    e.target.value = "";
   };
 
   const removeImage = async (index: number) => {
@@ -220,7 +252,7 @@ useEffect(() => {
     }
   };
 
- 
+
 
   return (
     <div className="container">
@@ -241,7 +273,7 @@ useEffect(() => {
             <option>Non flowering plants ( છોડવાઓ )</option>
             <option>Semi shade plant ( છાયા વાળા છોડ )</option>
             <option>Shape / cutting plant ( આકાર વાળા છોડ )</option>
-            <option>Draft plants ( ડ્રાફ્ટ છોડ )</option>
+            <option>Dwarf plants ( ડ્રાફ્ટ છોડ )</option>
             <option>Underground plant ( ગાંઠો  )</option>
             <option>Ground cover plant ( પથરાતા છોડ )</option>
             <option>lawn ( લોન )</option>
@@ -251,8 +283,11 @@ useEffect(() => {
             <option>Seasonal plant</option>
             <option>Medicinal plant ( આર્યુવેદિક વનસ્પતિ )</option>
             <option>Fruit plant  ( ફળ ના ઝાડ )</option>
+            <option>Miyavaki van (મિયાવાકી વન)</option>
             <option>Extra 1  ( વધારા ના 1 )</option>
             <option>Extra 2  ( વધારા ના 2 )</option>
+            <option>Extra 3  ( વધારા ના 3 )</option>
+
           </select>
         </div>
 
@@ -274,9 +309,9 @@ useEffect(() => {
         <input
           type="file"
           multiple
-          accept="image/*,video/*"
+          accept="image/*,image/heic,video/*"
           hidden
-          onChange={(e) => handleImageChange(e.target.files)}
+          onChange={handleImageChange}
         />
       </label>
 
@@ -455,72 +490,69 @@ useEffect(() => {
       </div>
 
       {/* USES */}
-    <div className="field">
-  <label className="text-green-700 font-semibold mb-2">
-    Description / Uses
-  </label>
+      <div className="field">
+        <label className="text-green-700 font-semibold mb-2">
+          Description / Uses
+        </label>
 
-  {editor && (
-    <div className="rounded-xl border border-green-300 bg-white shadow-sm">
+        {editor && (
+          <div className="rounded-xl border border-green-300 bg-white shadow-sm">
 
-      {/* Toolbar */}
-      <div className="flex items-center gap-2 px-3 py-2 border-b bg-green-50">
+            {/* Toolbar */}
+            <div className="flex items-center gap-2 px-3 py-2 border-b bg-green-50">
 
-        <button
-          type="button"
-          onClick={() => editor.chain().focus().toggleBold().run()}
-          className={`px-2 py-1 text-sm rounded ${
-            editor.isActive("bold")
-              ? "bg-green-200 text-green-900"
-              : "bg-white border"
-          }`}
-        >
-          B
-        </button>
+              <button
+                type="button"
+                onClick={() => editor.chain().focus().toggleBold().run()}
+                className={`px-2 py-1 text-sm rounded ${editor.isActive("bold")
+                  ? "bg-green-200 text-green-900"
+                  : "bg-white border"
+                  }`}
+              >
+                B
+              </button>
 
-        <button
-          type="button"
-          onClick={() => editor.chain().focus().toggleItalic().run()}
-          className={`px-2 py-1 text-sm rounded ${
-            editor.isActive("italic")
-              ? "bg-green-200 text-green-900"
-              : "bg-white border"
-          }`}
-        >
-          I
-        </button>
+              <button
+                type="button"
+                onClick={() => editor.chain().focus().toggleItalic().run()}
+                className={`px-2 py-1 text-sm rounded ${editor.isActive("italic")
+                  ? "bg-green-200 text-green-900"
+                  : "bg-white border"
+                  }`}
+              >
+                I
+              </button>
 
-        {/* Highlight toggle */}
-        <button
-          type="button"
-          onClick={() => {
-            if (editor.isActive("highlight")) {
-              editor.chain().focus().unsetHighlight().run();
-            } else {
-              editor
-                .chain()
-                .focus()
-                .toggleHighlight({ color: "#fde047" })
-                .run();
-            }
-          }}
-          className={`px-2 py-1 rounded ${
-            editor.isActive("highlight")
-              ? "bg-yellow-400 text-black"
-              : "bg-yellow-200"
-          }`}
-        >
-          🖍
-        </button>
+              {/* Highlight toggle */}
+              <button
+                type="button"
+                onClick={() => {
+                  if (editor.isActive("highlight")) {
+                    editor.chain().focus().unsetHighlight().run();
+                  } else {
+                    editor
+                      .chain()
+                      .focus()
+                      .toggleHighlight({ color: "#fde047" })
+                      .run();
+                  }
+                }}
+                className={`px-2 py-1 rounded ${editor.isActive("highlight")
+                  ? "bg-yellow-400 text-black"
+                  : "bg-yellow-200"
+                  }`}
+              >
+                🖍
+              </button>
+            </div>
+
+            {/* Editor */}
+            <div className="p-3 min-h-[120px] text-sm">
+              <EditorContent editor={editor} />
+            </div>
+          </div>
+        )}
       </div>
-
-      {/* Editor */}
-      <div className="p-3 min-h-[120px] text-sm">
-        <EditorContent editor={editor} />
-      </div>
-    </div>
-  )}
-</div>
 
 
 

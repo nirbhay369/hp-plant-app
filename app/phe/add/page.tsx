@@ -29,12 +29,42 @@ export default function AddPlantUtility() {
   };
 
   // ✅ FILE CHANGE
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const selected = Array.from(e.target.files || []);
+    if (selected.length === 0) return;
 
-    setFiles((prev) => [...prev, ...selected]);
+    const heic2any = (await import("heic2any")).default;
+    let processedFiles: File[] = [];
 
-    const previewData = selected.map((file) => {
+    for (const file of selected) {
+      if (file.type === "image/heic" || file.name.toLowerCase().endsWith(".heic")) {
+        try {
+          const convertedBlob = await heic2any({
+            blob: file,
+            toType: "image/jpeg",
+            quality: 0.8,
+          });
+          const blob = Array.isArray(convertedBlob) ? convertedBlob[0] : convertedBlob;
+
+          const convertedFile = new File(
+            [blob],
+            file.name.replace(/\.heic$/i, ".jpg"),
+            { type: "image/jpeg" }
+          );
+
+          processedFiles.push(convertedFile);
+        } catch (err) {
+          console.error("HEIC convert error:", err);
+          processedFiles.push(file);
+        }
+      } else {
+        processedFiles.push(file);
+      }
+    }
+
+    setFiles((prev) => [...prev, ...processedFiles]);
+
+    const previewData = processedFiles.map((file) => {
       const url = URL.createObjectURL(file);
 
       return {
@@ -102,7 +132,7 @@ export default function AddPlantUtility() {
   return (
     <div className="container" >
       <h1 className="text-2xl font-bold text-green-700 mb-6">
-        Plant Health 🌿 & Equipment 🛠
+        ADD TUHI🛠
       </h1>
 
       <div className="flex flex-col gap-4">
@@ -143,6 +173,7 @@ export default function AddPlantUtility() {
           <input
             type="file"
             multiple
+            accept="image/*,image/heic,video/*"
             hidden
             onChange={handleFileChange}
           />
