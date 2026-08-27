@@ -9,10 +9,11 @@ import StarterKit from "@tiptap/starter-kit";
 import Highlight from "@tiptap/extension-highlight";
 import { TextStyle } from "@tiptap/extension-text-style";
 import { Color } from "@tiptap/extension-color";
+import { MultiSelect } from "react-multi-select-component";
 
 
 type PlantForm = {
-  category: string;
+  category: string[];
   name: string;
   images: File[];
 
@@ -39,7 +40,7 @@ export default function AddPlant() {
   const router = useRouter();
 
   const [form, setForm] = useState<PlantForm>({
-    category: "Tree",
+    category: []  ,
     name: "",
     images: [],
 
@@ -204,49 +205,55 @@ export default function AddPlant() {
     <div className="container">
       <h1 className="title">🌱 Add Plant</h1>
 
-      <div className="flex flex-col gap-4">
-        <div className="field">
-          <label>Category</label>
-          <select
-            value={form.category}
-            onChange={(e) => handleChange("category", e.target.value)}
-            className="p-2 border rounded-xl"
-          >
-            <option value="">All Category</option>
-            <option>Big tree ( મોટા ઝાડ )</option>
-            <option>Small tree ( નાના ઝાડ )</option>
-            <option>Palm tree ( પામ )</option>
-            <option>Flowering plant ( ફુલ વાળા છોડ )</option>
-            <option>Non flowering plants ( છોડવાઓ )</option>
-            <option>Semi shade plant ( છાયા વાળા છોડ )</option>
-            <option>Shape / cutting plant ( આકાર વાળા છોડ )</option>
-            <option>Dwarf plants ( ડ્રાફ્ટ છોડ )</option>
-            <option>Underground plant ( ગાંઠો  )</option>
-            <option>Ground cover plant ( પથરાતા છોડ )</option>
-            <option>lawn ( લોન )</option>
-            <option>Creeper ( વેલ )</option>
-            <option>Ornamental plants</option>
-            <option>Indoor plant</option>
-            <option>Seasonal plant</option>
-            <option>Medicinal plant ( આર્યુવેદિક વનસ્પતિ )</option>
-            <option>Fruit plant  ( ફળ ના ઝાડ )</option>
-            <option>Miyavaki van (મિયાવાકી વન)</option>
-            <option>Extra 1  ( વધારા ના 1 )</option>
-            <option>Extra 2  ( વધારા ના 2 )</option>
-            <option>Extra 3  ( વધારા ના 3 )</option>
+<div className="field">
+  <label>Category</label>
 
-          </select>
-        </div>
-
-        <div className="field">
-          <label>Plant Name</label>
-          <input
-            value={form.name}
-            onChange={(e) => handleChange("name", e.target.value)}
-          />
-        </div>
-
-      </div>
+  <MultiSelect
+    options={[
+      { label: "Big tree ( મોટા ઝાડ )", value: "Big tree ( મોટા ઝાડ )" },
+      { label: "Small tree ( નાના ઝાડ )", value: "Small tree ( નાના ઝાડ )" },
+      { label: "Palm tree ( પામ )", value: "Palm tree ( પામ )" },
+      { label: "Flowering plant ( ફુલ વાળા છોડ )", value: "Flowering plant ( ફુલ વાળા છોડ )" },
+      { label: "Non flowering plants ( છોડવાઓ )", value: "Non flowering plants ( છોડવાઓ )" },
+      { label: "Semi shade plant ( છાયા વાળા છોડ )", value: "Semi shade plant ( છાયા વાળા છોડ )" },
+      { label: "Shape / cutting plant ( આકાર વાળા છોડ )", value: "Shape / cutting plant ( આકાર વાળા છોડ )" },
+      { label: "Dwarf plants ( ડ્રાફ્ટ છોડ )", value: "Dwarf plants ( ડ્રાફ્ટ છોડ )" },
+      { label: "Underground plant ( ગાંઠો )", value: "Underground plant ( ગાંઠો )" },
+      { label: "Ground cover plant ( પથરાતા છોડ )", value: "Ground cover plant ( પથરાતા છોડ )" },
+      { label: "lawn ( લોન )", value: "lawn ( લોન )" },
+      { label: "Creeper ( વેલ )", value: "Creeper ( વેલ )" },
+      { label: "Ornamental plants", value: "Ornamental plants" },
+      { label: "Indoor plant", value: "Indoor plant" },
+      { label: "Seasonal plant", value: "Seasonal plant" },
+      { label: "Medicinal plant ( આર્યુવેદિક વનસ્પતિ )", value: "Medicinal plant ( આર્યુવેદિક વનસ્પતિ )" },
+      { label: "Fruit plant ( ફળ ના ઝાડ )", value: "Fruit plant ( ફળ ના ઝાડ )" },
+      { label: "Miyavaki van (મિયાવાકી વન)", value: "Miyavaki van (મિયાવાકી વન)" },
+      { label: "Extra 1 ( વધારા ના 1 )", value: "Extra 1 ( વધારા ના 1 )" },
+      { label: "Extra 2 ( વધારા ના 2 )", value: "Extra 2 ( વધારા ના 2 )" },
+      { label: "Extra 3 ( વધારા ના 3 )", value: "Extra 3 ( વધારા ના 3 )" },
+    ]}
+    value={form.category.map((cat) => ({
+      label: cat,
+      value: cat,
+    }))}
+    onChange={(selected: { label: string; value: string }[]) =>
+  handleChange(
+    "category",
+    (selected || []).map(
+      (item: { value: string }) => item.value
+    )
+  )
+}
+    labelledBy="Select Categories"
+    hasSelectAll
+    overrideStrings={{
+      selectSomeItems: "Select Categories",
+      allItemsAreSelected: "All Selected",
+      selectAll: "Select All",
+      search: "Filter",
+    }}
+  />
+</div>
 
       <label className="uploadBtn">
         📤 Upload Images / Videos
@@ -590,6 +597,8 @@ input, select, textarea {
           flex-wrap: wrap;
         }
 
+
+
         .imgBox {
           position: relative;
         }
@@ -636,6 +645,35 @@ input, select, textarea {
             padding: 2px 5px;
             border-radius: 4px;
             font-size: 10px;
+}
+            select[multiple] {
+            height: 140px;
+          }
+            input: (base) => ({
+            ...base,
+           boxShadow: "none",
+}),
+
+.rmsc {
+  --rmsc-main: #22c55e !important;
+  --rmsc-hover: #dcfce7 !important;
+  --rmsc-selected: #22c55e !important;
+  --rmsc-border: #bbf7d0 !important;
+  --rmsc-gray: #6b7280 !important;
+  --rmsc-bg: white !important;
+  border-radius: 16px !important;
+  font-weight: 600;
+}
+
+.dropdown-container {
+  border-radius: 16px !important;
+  min-height: 52px !important;
+  border: 2px solid #bbf7d0 !important;
+}
+
+.dropdown-container:focus-within {
+  border-color: #86efac !important;
+  box-shadow: 0 0 0 3px rgba(134, 239, 172, 0.25);
 }
       
       `}</style>

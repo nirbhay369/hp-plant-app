@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { useRouter } from "next/navigation";
 import { deletePheFolder } from "@/lib/cloudinary";
+import { Pencil, Trash2 } from "lucide-react";
 
 type Item = {
   id: string;
@@ -170,12 +171,36 @@ export default function PhePage() {
           </button>
 
           <div className="bg-white max-w-3xl w-full rounded-2xl p-6 max-h-[90vh] overflow-auto">
-            <button
-              onClick={() => setSelectedIndex(null)}
-              className="float-right text-xl"
-            >
-              ✕
-            </button>
+            <div className="flex justify-end items-center gap-2 mb-2">
+              {/* DELETE */}
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setDeleteItem(current);
+                }}
+                className="p-2 rounded-lg hover:bg-red-50 transition"
+              >
+                <Trash2 className="w-5 h-5 text-red-500" />
+              </button>
+
+              {/* EDIT */}
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  router.push(`/phe/edit/${current.id}`);
+                }}
+                className="p-2 rounded-lg hover:bg-green-50 transition"
+              >
+                <Pencil className="w-5 h-5 text-green-600" />
+              </button>
+
+              <button
+                onClick={() => setSelectedIndex(null)}
+                className="float-right text-xl"
+              >
+                ✕
+              </button>
+            </div>
 
             <h2 className="text-2xl font-bold">{current.name}</h2>
             <p className="text-green-600">{current.category}</p>
