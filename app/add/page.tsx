@@ -255,6 +255,14 @@ export default function AddPlant() {
   />
 </div>
 
+       <div className="field">
+          <label>Plant Name</label>
+          <input
+            value={form.name}
+            onChange={(e) => handleChange("name", e.target.value)}
+          />
+        </div>
+
       <label className="uploadBtn">
         📤 Upload Images / Videos
         <input

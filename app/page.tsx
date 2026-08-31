@@ -541,7 +541,7 @@ export default function Home() {
 
       {/* MEDIA FULLSCREEN VIEWER */}
       {mediaOpen && (
-        <div className="fixed inset-0 bg-black z-[60] flex items-center justify-center"
+        <div className="fixed inset-0 bg-black z-60 flex items-center justify-center"
           onTouchStart={handleTouchStart}
           onTouchMove={handleTouchMove}
           onTouchEnd={handleTouchEnd}>
